@@ -7,7 +7,7 @@
   # Setup Guide: https://swe-agent.com/latest/installation/source/
   git clone https://github.com/SWE-agent/SWE-agent.git
   cd SWE-agent/
-  git checkout 8089c8baa55be1b12a61767e9b8e52bb63443b40 && patch -p1 -f < ../sweagent_diff.patch
+  git checkout 1375ec4fa69d300b432b9ca61d6b0e5d7259131c && patch -p1 -f < ../sweagent_diff.patch
   python -m pip install --upgrade pip && pip install --editable .
   ```
   
