@@ -25,9 +25,22 @@ from .dataset import load_dataset
 
 
 # Log
-# - Removed `get_available_strategies` and `strategy` flag
 # - Removed `claude_timeout` related code
 # - `api-provider` choices updated to only Gemini for now.
+
+
+def get_available_strategies() -> list[str]:
+    
+    templates_dir = Path(__file__).parent.parent / "templates"
+    if not templates_dir.exists():
+        return ["iterative", "smart"]  
+    
+    strategies = []
+    for template_file in templates_dir.glob("*.md"):
+        strategy_name = template_file.stem
+        strategies.append(strategy_name)
+    
+    return strategies if strategies else ["iterative", "smart"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,6 +62,7 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--limit", type=int)
     batch_parser.add_argument("--resume", action="store_true")
     batch_parser.add_argument("--keep-containers", action="store_true")
+    batch_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
     batch_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     
 
@@ -68,6 +82,7 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--timeout", type=str, default="45m")
     single_parser.add_argument("--keep-container", action="store_true")
     single_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
+    single_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
     single_parser.add_argument("--interactive", action="store_true")
     
 
@@ -158,6 +173,7 @@ def handle_batch_command(args):
             max_workers=args.max_workers,
             timeout_seconds=timeout_seconds,
             api_provider=args.api_provider,
+            strategy=args.strategy,
             resume=args.resume,
             limit=args.limit,
             keep_containers=args.keep_containers,
@@ -215,6 +231,7 @@ def handle_single_command(args):
             record=record,
             outputs_root=args.outputs_root,
             timeout_seconds=timeout_seconds,
+            strategy=args.strategy,
             api_provider=args.api_provider,
             keep_container=args.keep_container,
             tool_limits=tool_limits_dict,

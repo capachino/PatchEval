@@ -27,13 +27,16 @@ from .claude_runner_enhanced import ClaudeRunnerEnhanced
 from .patch import write_patch_file, get_patch_stats, validate_patch
 
 
+# Log
+# - Removed `claude_timeout` related code
+# - Updated `api_provider` handling to include only Gemini for now.
+
 def run_single_cve(record: CVERecord,
                   outputs_root: Path,
                   semaphore: Optional[threading.Semaphore] = None,
                   timeout_seconds: int = 2700,
-                  claude_timeout_seconds: int = 1800,
                   strategy: str = "iterative",
-                  api_provider: str = "anthropic",
+                  api_provider: str = "gemini",
                   keep_container: bool = False,
                   tool_limits: Optional[Dict[str, int]] = None,
                   max_total_tool_calls: Optional[int] = None,
@@ -71,31 +74,10 @@ def run_single_cve(record: CVERecord,
 
         
         result["stage"] = "api_check"
-        if api_provider == "anthropic":
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+        if api_provider == "gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
-                raise RuntimeError("Missing ANTHROPIC_API_KEY environment variable")
-        elif api_provider == "bedrock":
-            aws_region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
-            aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-            aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-            bedrock_token = os.getenv("AWS_BEARER_TOKEN_BEDROCK")
-            
-            if not aws_region:
-                raise RuntimeError("Missing AWS_REGION environment variable")
-            if not (aws_access_key and aws_secret_key) and not bedrock_token:
-                raise RuntimeError("Missing AWS credentials or AWS_BEARER_TOKEN_BEDROCK")
-            api_key = bedrock_token or f"{aws_access_key}:{aws_secret_key}:{aws_region}"
-        elif api_provider == "vertex":
-            vertex_token = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("VERTEX_AUTH_TOKEN")
-            vertex_project = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("VERTEX_PROJECT_ID")
-            vertex_region = os.getenv("CLOUD_ML_REGION") or "us-central1"
-            
-            if not vertex_token:
-                raise RuntimeError("Missing GOOGLE_APPLICATION_CREDENTIALS or VERTEX_AUTH_TOKEN")
-            if not vertex_project:
-                raise RuntimeError("Missing GOOGLE_CLOUD_PROJECT")
-            api_key = f"{vertex_token}:{vertex_project}:{vertex_region}"
+                raise RuntimeError("Missing GEMINI_API_KEY environment variable")
         else:
             raise RuntimeError(f"Unsupported API provider: {api_provider}")
         
@@ -127,7 +109,7 @@ def run_single_cve(record: CVERecord,
         
         claude_start = time.time()
         success, output_log, patch_content = claude.execute_cve_repair(
-            strategy, claude_timeout_seconds)
+            strategy)
         claude_duration = time.time() - claude_start
         
         result["agent_duration"] = claude_duration
