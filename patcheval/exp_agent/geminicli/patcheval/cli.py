@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Command-line interface for Claude Code CVE benchmark."""
+"""Command-line interface for Gemini CLI CVE benchmark."""
 import argparse
 import logging
 import os
@@ -24,18 +24,10 @@ from .docker_utils import cleanup_containers_by_prefix
 from .dataset import load_dataset
 
 
-def get_available_strategies() -> list[str]:
-    
-    templates_dir = Path(__file__).parent.parent / "templates"
-    if not templates_dir.exists():
-        return ["iterative", "smart"]  
-    
-    strategies = []
-    for template_file in templates_dir.glob("*.md"):
-        strategy_name = template_file.stem
-        strategies.append(strategy_name)
-    
-    return strategies if strategies else ["iterative", "smart"]
+# Log
+# - Removed `get_available_strategies` and `strategy` flag
+# - Removed `claude_timeout` related code
+# - `api-provider` choices updated to only Gemini for now.
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,12 +46,10 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--outputs-root", type=Path, default="./outputs")
     batch_parser.add_argument("--max-workers", type=int, default=1)
     batch_parser.add_argument("--timeout", type=str, default="45m")
-    batch_parser.add_argument("--claude-timeout", type=str, default="30m")
     batch_parser.add_argument("--limit", type=int)
     batch_parser.add_argument("--resume", action="store_true")
     batch_parser.add_argument("--keep-containers", action="store_true")
-    batch_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
-    batch_parser.add_argument("--api-provider", choices=["anthropic", "bedrock", "vertex"], default="anthropic")
+    batch_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     
 
     batch_parser.add_argument("--tool-limits", type=str, help="(tool1:limit1,tool2:limit2 or total:500)")
@@ -76,10 +66,8 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--outputs-root", type=Path, default="./outputs")
     single_parser.add_argument("--cve-id", type=str, required=True)
     single_parser.add_argument("--timeout", type=str, default="45m")
-    single_parser.add_argument("--claude-timeout", type=str, default="30m")
     single_parser.add_argument("--keep-container", action="store_true")
-    single_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
-    single_parser.add_argument("--api-provider", choices=["anthropic", "bedrock", "vertex"], default="anthropic")
+    single_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     single_parser.add_argument("--interactive", action="store_true")
     
 
@@ -140,31 +128,10 @@ def setup_logging(level=logging.INFO):
 
 
 def get_api_key_and_validate(api_provider: str) -> str:
-    if api_provider == "anthropic":
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+    if api_provider == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise RuntimeError("Missing ANTHROPIC_API_KEY environment variable")
-    elif api_provider == "bedrock":
-        aws_region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
-        aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        bedrock_token = os.getenv("AWS_BEARER_TOKEN_BEDROCK")
-        
-        if not aws_region:
-            raise RuntimeError("Missing AWS_REGION or AWS_DEFAULT_REGION environment variable")
-        if not (aws_access_key and aws_secret_key) and not bedrock_token:
-            raise RuntimeError("Missing AWS credentials (AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY) or AWS_BEARER_TOKEN_BEDROCK")
-        api_key = bedrock_token or f"{aws_access_key}:{aws_secret_key}:{aws_region}"
-    elif api_provider == "vertex":
-        vertex_token = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("VERTEX_AUTH_TOKEN")
-        vertex_project = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("VERTEX_PROJECT_ID")
-        vertex_region = os.getenv("CLOUD_ML_REGION") or os.getenv("VERTEX_REGION")
-        
-        if not vertex_token:
-            raise RuntimeError("Missing GOOGLE_APPLICATION_CREDENTIALS or VERTEX_AUTH_TOKEN")
-        if not vertex_project:
-            raise RuntimeError("Missing GOOGLE_CLOUD_PROJECT or VERTEX_PROJECT_ID")
-        api_key = f"{vertex_token}:{vertex_project}:{vertex_region or 'us-central1'}"
+            raise RuntimeError("Missing GEMINI_API_KEY environment variable")
     else:
         raise RuntimeError(f"Unsupported API provider: {api_provider}")
     
@@ -174,7 +141,6 @@ def get_api_key_and_validate(api_provider: str) -> str:
 def handle_batch_command(args):
     """Handle batch processing command."""
     timeout_seconds = parse_timeout(args.timeout)
-    claude_timeout_seconds = parse_timeout(args.claude_timeout)
     
     # Check API credentials  
     try:
@@ -191,8 +157,6 @@ def handle_batch_command(args):
             outputs_root=args.outputs_root,
             max_workers=args.max_workers,
             timeout_seconds=timeout_seconds,
-            claude_timeout_seconds=claude_timeout_seconds,
-            strategy=args.strategy,
             api_provider=args.api_provider,
             resume=args.resume,
             limit=args.limit,
@@ -224,7 +188,6 @@ def handle_batch_command(args):
 def handle_single_command(args):
     """Handle single CVE processing command."""
     timeout_seconds = parse_timeout(args.timeout)
-    claude_timeout_seconds = parse_timeout(args.claude_timeout)
     
     # Check API credentials
     try:
@@ -252,8 +215,6 @@ def handle_single_command(args):
             record=record,
             outputs_root=args.outputs_root,
             timeout_seconds=timeout_seconds,
-            claude_timeout_seconds=claude_timeout_seconds,
-            strategy=args.strategy,
             api_provider=args.api_provider,
             keep_container=args.keep_container,
             tool_limits=tool_limits_dict,
