@@ -161,7 +161,7 @@ class GeminiRunnerEnhanced:
         try:
             self.cve_id = record.cve_id  
             
-            install_script_path = "templates/claude-code-install.sh"
+            install_script_path = "templates/gemini-install.sh"
             
             with open(install_script_path, 'r', encoding='utf-8') as f:
                 install_script = f.read()
