@@ -16,11 +16,11 @@ __version__ = "1.0.0"
 __author__ = "Claude CVE Benchmark Team"
 
 from .dataset import CVERecord
-from .claude_runner_enhanced import ClaudeRunnerEnhanced
+from .claude_runner_enhanced import GeminiRunnerEnhanced
 from .single_runner import run_single_cve
 from .batch_runner import run_batch_cves
 
 __all__ = [
-    "CVERecord", "ClaudeRunnerEnhanced", 
+    "CVERecord", "GeminiRunnerEnhanced", 
     "run_single_cve", "run_batch_cves"
 ]

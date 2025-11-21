@@ -117,7 +117,7 @@ class CostController:
         }
 
 
-class ClaudeRunnerEnhanced:
+class GeminiRunnerEnhanced:
     
     def __init__(self, container_id: str, work_dir: str, 
                  tool_limits: Optional[Dict[str, int]] = None,
@@ -181,7 +181,7 @@ class ClaudeRunnerEnhanced:
             self._write_file_to_container("/tmp/install_claude.sh", install_script)
             self._exec_in_container("chmod", "+x /tmp/install_claude.sh")
             
-            self._log_process_step("claude_install", "install Claude Code")
+            self._log_process_step("gemini_install", "install Gemini")
             
             
             try:
@@ -189,14 +189,14 @@ class ClaudeRunnerEnhanced:
                 install_status = self._exec_in_container_with_output("bash", f"-c '{install_cmd}'").strip()
                 
                 if "INSTALL_SUCCESS" in install_status:
-                    self.logger.info("Claude Code install success")
-                    self._log_process_step("claude_install_success", "Claude Code install success")
+                    self.logger.info("Gemini install success")
+                    self._log_process_step("gemini_install_success", "Gemini install success")
                 else:
-                    self.logger.warning("Claude install warning")
-                    self._log_process_step("claude_install_warning", "Claude install warning")
+                    self.logger.warning("Gemini install warning")
+                    self._log_process_step("gemini_install_warning", "Gemini install warning")
             except Exception as e:
-                self.logger.warning(f"Claude install error: {e}")
-                self._log_process_step("claude_install_error", f"Claude install error: {e}")
+                self.logger.warning(f"Gemini install error: {e}")
+                self._log_process_step("gemini_install_error", f"Gemini install error: {e}")
             ignore_content = f'echo -e "\n\n*.png\n*.jpg\n*.jpeg\n*.gif\n*.bmp\n*.tiff\n*.webp\n*.mp3\n*.mp4\n*.avi\n*.mov\n*.flv\n*.wmv\n*.pdf\n*.psd\n*.ai\n\n\n*.zip\n*.tar\n*.tar.gz\n*.tar.bz2\n*.7z\n*.rar\n*.gz\n*.bz2\n\n\n*.exe\n*.dll\n*.so\n*.dylib\n*.bin\n*.out\n\n*.db\n*.sqlite\n*.sqlite3\n\n/build/\n/dist/\n/bin/\n/out/\n\n\n.DS_Store\nThumbs.db\n\n# Go\nmyapp\nvendor/\n*.out\n*.test\ncoverage.out\nbuild/\ndist/\n\n# JavaScript/Node.js\nnode_modules/\ndist/\nbuild/\nout/\ndist-ssr/\n*.bundle.js\n*.bundle.js.map\n*.chunk.js\n*.chunk.js.map\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\n.pnpm-debug.log*\n.env.local\n.env.development.local\n.env.test.local\n.env.production.local\n.node-gyp/\n*.node\n\n# Python\n__pycache__/\n*.py[cod]\n*$py.class\nvenv/\nenv/\nENV/\n*.venv\n*.egg-info/\n.installed.cfg\n*.egg\ndist/\nbuild/\nwheelhouse/\n*.so\n*.pyd\n*.dll\n.coverage\nhtmlcov/\n.pytest_cache/\n\n*.blk\n*.idx\n*.jar\n*.md\n*package-lock.json\n\n\n" >> {self.work_dir}/.gitignore'.replace('\n', '\\n')
             self._exec_in_container('find /workspace/ -maxdepth 1 -type f -name "*.patch" -exec rm -v {} +')
             self._exec_in_container("bash", f"-c '{ignore_content}'")
@@ -280,7 +280,7 @@ class ClaudeRunnerEnhanced:
                     self.logger.error(f"copy file error: {e}")
                     self._log_process_step("settings_copy_error", f"copy file error: {str(e)}")
             
-            self._exec_in_container("chown", f"-R claude_user:claude_user {self.work_dir}")
+            self._exec_in_container("chown", f"-R gemini_user:gemini_user {self.work_dir}")
         
             return True
             
@@ -293,7 +293,7 @@ class ClaudeRunnerEnhanced:
             self.start_time = time.time()
             
             
-            cmd = self._build_claude_command(strategy)
+            cmd = self._build_gemini_command(strategy)
             
             
             start_time = time.time()
@@ -315,7 +315,7 @@ class ClaudeRunnerEnhanced:
             
            
             env_prefix = " ".join(env_vars) + " " if env_vars else ""
-            switch_user_cmd = f"su - claude_user -c 'cd {self.work_dir}  && {env_prefix}{cmd}'"
+            switch_user_cmd = f"su - gemini_user -c 'cd {self.work_dir}  && {env_prefix}{cmd}'"
             
             
             try:
@@ -333,7 +333,7 @@ class ClaudeRunnerEnhanced:
                     
             except subprocess.TimeoutExpired:
                 self._update_real_time_log(status="timeout")
-                result = f"Claude execution timeout after {timeout} seconds"
+                result = f"Gemini execution timeout after {timeout} seconds"
                 success = False
             except Exception as e:
                 self._log_process_step("command_error", f"execution error: {str(e)}")
@@ -371,11 +371,11 @@ class ClaudeRunnerEnhanced:
             
             return False, str(e), ""
     
-    def _build_claude_command(self, strategy: str) -> str:
+    def _build_gemini_command(self, strategy: str) -> str:
         command_name = strategy  
         
-        claude_cmd_parts = [
-            f"claude /{command_name}",
+        cmd_parts = [
+            f"gemini /{command_name}",
             "--print",  
             "--dangerously-skip-permissions",  
             "--permission-mode bypassPermissions",  
@@ -383,27 +383,27 @@ class ClaudeRunnerEnhanced:
         
         
         if self.enable_detailed_logging:
-            claude_cmd_parts.extend([
+            cmd_parts.extend([
                 "--output-format stream-json",  
                 "--verbose"  
             ])
         else:
-            claude_cmd_parts.append("--output-format json")  
+            cmd_parts.append("--output-format json")  
         
         
         if self.settings_file:
-            claude_cmd_parts.extend([
-                "--settings", f".claude/{self.settings_file}"
+            cmd_parts.extend([
+                "--settings", f".gemini/{self.settings_file}"
             ])
         
         
         if self.tool_limiter.max_calls:
             self.logger.debug(f"tool limit setting: {self.tool_limiter.max_calls}")
         
-        claude_command = " ".join(claude_cmd_parts)
-        self._log_process_step("command_build", f"build command: {claude_command}")
+        command = " ".join(cmd_parts)
+        self._log_process_step("command_build", f"build command: {command}")
         
-        return claude_command
+        return command
     
     def _log_process_step(self, step_type: str, message: str) -> None:
         timestamp = time.time()
@@ -437,7 +437,7 @@ class ClaudeRunnerEnhanced:
                 "api_provider": api_provider,
                 "duration": 0,
                 "patch_stats": {},
-                "claude_output": "",
+                "gemini_output": "",
                 "container_logs": "",
                 "detailed_process": None,
                 "status": "running",
@@ -458,7 +458,7 @@ class ClaudeRunnerEnhanced:
             current_log = json.loads(self.temp_log_file.read_text(encoding='utf-8'))
             
             if new_output_chunk:
-                current_log["claude_output"] += new_output_chunk
+                current_log["gemini_output"] += new_output_chunk
                 
             if status:
                 current_log["status"] = status
@@ -531,12 +531,12 @@ class ClaudeRunnerEnhanced:
         if self.temp_log_file and self.temp_log_file.exists():
             try:
                 current_log = json.loads(self.temp_log_file.read_text(encoding='utf-8'))
-                return current_log.get("claude_output", "")
+                return current_log.get("gemini_output", "")
             except:
                 pass
         return "".join(self.output_buffer)
     
-    def _analyze_claude_output(self, output: str) -> None:
+    def _analyze_gemini_output(self, output: str) -> None:
         
         try:
             
@@ -589,13 +589,13 @@ class ClaudeRunnerEnhanced:
             remaining = real_time_stats['max_total_calls'] - real_time_stats['total_tool_calls']
         
             
-    def _generate_readable_log(self, claude_output: str) -> None:
+    def _generate_readable_log(self, gemini_output: str) -> None:
         try:
             from .log_parser import StreamJsonLogParser
             
-            temp_log_path = f"/tmp/claude_stream_{int(time.time())}.json"
+            temp_log_path = f"/tmp/gemini_stream_{int(time.time())}.json"
             with open(temp_log_path, 'w', encoding='utf-8') as f:
-                f.write(claude_output)
+                f.write(gemini_output)
             
             parser = StreamJsonLogParser()
             
@@ -709,8 +709,8 @@ class ClaudeRunnerEnhanced:
     
     def _perform_post_process_analysis(self) -> Optional[Dict[str, Any]]:
         try:
-            if hasattr(self, '_last_claude_output') and self._last_claude_output:
-                return self.stream_monitor.analyze_completed_output(self._last_claude_output)
+            if hasattr(self, '_last_gemini_output') and self._last_gemini_output:
+                return self.stream_monitor.analyze_completed_output(self._last_gemini_output)
             else:
                 return None
         except Exception as e:
@@ -795,7 +795,7 @@ class ClaudeRunnerEnhanced:
             patch_locations = [
                 "/workspace/final-cve-fix.patch",  
                 f"{self.work_dir}/final-cve-fix.patch",
-                f"{self.work_dir}/.claude/outputs/patch.diff"
+                f"{self.work_dir}/.gemini/outputs/patch.diff"
             ]
             
             for location in patch_locations:

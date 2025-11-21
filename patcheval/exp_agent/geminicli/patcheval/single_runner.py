@@ -23,7 +23,7 @@ from .docker_utils import (
     pull_image_with_retry, 
     stop_container, run_work_container_no_mount
 )
-from .claude_runner_enhanced import ClaudeRunnerEnhanced
+from .claude_runner_enhanced import GeminiRunnerEnhanced
 from .patch import write_patch_file, get_patch_stats, validate_patch
 
 
@@ -91,7 +91,7 @@ def run_single_cve(record: CVERecord,
         result["container_id"] = container_id
         
         
-        claude = ClaudeRunnerEnhanced(
+        gemini = GeminiRunnerEnhanced(
             container_id, 
             record.work_dir,
             tool_limits=tool_limits,
@@ -102,21 +102,21 @@ def run_single_cve(record: CVERecord,
             settings_file=settings_file
         )
         
-        if not claude.setup_environment(record, strategy, api_key, api_provider, port):
+        if not gemini.setup_environment(record, strategy, api_key, api_provider, port):
             pass
         
-        result["stage"] = "claude_execution"
+        result["stage"] = "gemini_execution"
         
-        claude_start = time.time()
-        success, output_log, patch_content = claude.execute_cve_repair(
+        gemini_start = time.time()
+        success, output_log, patch_content = gemini.execute_cve_repair(
             strategy)
-        claude_duration = time.time() - claude_start
+        gemini_duration = time.time() - gemini_start
         
-        result["agent_duration"] = claude_duration
+        result["agent_duration"] = gemini_duration
         
         if not success:
             if not patch_content:
-                patch_content = claude._extract_patch()
+                patch_content = gemini._extract_patch()
         
         result["stage"] = "patch_processing"
         
@@ -158,22 +158,22 @@ def run_single_cve(record: CVERecord,
         
         log_file_path = outputs_root / "agent_logs" / f"{problem_id}.log"
         
-        container_logs = claude.get_container_logs()
-        claude.set_success_and_finalize_log(True, patch_content, container_logs)
+        container_logs = gemini.get_container_logs()
+        gemini.set_success_and_finalize_log(True, patch_content, container_logs)
         
         full_log = {
             "problem_id": problem_id,
             "cve_id": record.cve_id,
             "strategy": strategy,
             "api_provider": api_provider,
-            "duration": claude_duration,
+            "duration": gemini_duration,
             "patch_stats": patch_stats,
-            "claude_output": output_log,
+            "gemini_output": output_log,
             "container_logs": container_logs
         }
         
         if enable_detailed_logging:
-            full_log["detailed_process"] = claude.get_detailed_process_log()
+            full_log["detailed_process"] = gemini.get_detailed_process_log()
         
         import json
         log_file_path.write_text(json.dumps(full_log, indent=2, ensure_ascii=False))
@@ -197,7 +197,7 @@ def run_single_cve(record: CVERecord,
         if save_process_logs:
             process_log_path = outputs_root / "process_logs" / f"{problem_id}_process.json"
             process_log_path.parent.mkdir(exist_ok=True)
-            claude.save_process_log(str(process_log_path))
+            gemini.save_process_log(str(process_log_path))
         
         result["is_success"] = True
         
@@ -207,7 +207,7 @@ def run_single_cve(record: CVERecord,
             result["warning"] = ""
            
         
-        claude.cleanup()
+        gemini.cleanup()
         
         result["stage"] = "completed"
         result["total_duration"] = time.time() - start_time
@@ -220,9 +220,9 @@ def run_single_cve(record: CVERecord,
         logger.error(f"{result['stage']}: {e}")
         
         try:
-            if container_id and "claude" in locals():
-                container_logs = claude.get_container_logs() if 'claude' in locals() else ""
-                claude.set_success_and_finalize_log(False, "", container_logs)
+            if container_id and "gemini" in locals():
+                container_logs = gemini.get_container_logs() if 'gemini' in locals() else ""
+                gemini.set_success_and_finalize_log(False, "", container_logs)
                 
                 log_file_path = outputs_root / "agent_logs" / f"{problem_id}_failed.log"
                 outputs_root.mkdir(parents=True, exist_ok=True)
@@ -247,7 +247,7 @@ def run_single_cve(record: CVERecord,
         if container_id:
             try:
                 if not keep_container:
-                    force_stop = hasattr(claude, 'execution_stopped') and claude.execution_stopped
+                    force_stop = hasattr(gemini, 'execution_stopped') and gemini.execution_stopped
                     stop_container(f"bench.{problem_id}.work", force=force_stop)
                 else:
                     pass
