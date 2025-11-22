@@ -13,10 +13,10 @@
 # limitations under the License.
 
 __version__ = "1.0.0"
-__author__ = "Claude CVE Benchmark Team"
+__author__ = "Gemini CVE Benchmark Team"
 
 from .dataset import CVERecord
-from .claude_runner_enhanced import GeminiRunnerEnhanced
+from .gemini_runner_enhanced import GeminiRunnerEnhanced
 from .single_runner import run_single_cve
 from .batch_runner import run_batch_cves
 

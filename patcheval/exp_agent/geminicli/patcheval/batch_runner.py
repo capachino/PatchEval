@@ -23,6 +23,10 @@ from .dataset import load_dataset
 from .single_runner import run_single_cve
 
 
+# Log
+# - Removed `claude_timeout` related code
+# - Port arg removed
+
 def _auto_generate_readable_log(outputs_root: Path, problem_id: str):
     try:
         from .log_parser import StreamJsonLogParser
@@ -87,9 +91,8 @@ def run_batch_cves(dataset_path: Path,
                   outputs_root: Path,
                   max_workers: int = 1,
                   timeout_seconds: int = 2700,
-                  claude_timeout_seconds: int = 1800,
                   strategy: str = "iterative",
-                  api_provider: str = "anthropic",
+                  api_provider: str = "gemini",
                   resume: bool = False,
                   limit: Optional[int] = None,
                   include_ids: Optional[Set[str]] = None,
@@ -101,8 +104,7 @@ def run_batch_cves(dataset_path: Path,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None,
-                  port: str="8082") -> Dict[str, Any]:
+                  settings_file: Optional[str] = None) -> Dict[str, Any]:
     
     start_time = time.time()
     logger = logging.getLogger(__name__)
@@ -140,7 +142,6 @@ def run_batch_cves(dataset_path: Path,
                 outputs_root=outputs_root,
                 semaphore=semaphore,
                 timeout_seconds=timeout_seconds,
-                claude_timeout_seconds=claude_timeout_seconds,
                 strategy=strategy,
                 api_provider=api_provider,
                 keep_container=keep_containers,
@@ -150,8 +151,7 @@ def run_batch_cves(dataset_path: Path,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
                 allow_git_diff_fallback=allow_git_diff_fallback,
-                settings_file=settings_file,
-                port=port
+                settings_file=settings_file
             ): record for record in records
         }
         
@@ -221,7 +221,6 @@ def run_batch_cves(dataset_path: Path,
         "api_provider": api_provider,
         "max_workers": max_workers,
         "timeout_seconds": timeout_seconds,
-        "claude_timeout_seconds": claude_timeout_seconds,
         "timestamp": time.time()
     }
     
@@ -272,7 +271,7 @@ def _generate_detailed_report(outputs_root: Path, results: list, summary: Dict[s
         report_path = outputs_root / "detailed_report.md"
         
         with open(report_path, 'w', encoding='utf-8') as f:
-            f.write("# Claude CVE\\n\\n")
+            f.write("# Gemini CVE\\n\\n")
             
             f.write(f"- **strategy**: {summary['strategy']}\\n")
             f.write(f"- **API**: {summary['api_provider']}\\n")
