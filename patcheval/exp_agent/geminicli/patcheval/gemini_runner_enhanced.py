@@ -378,8 +378,8 @@ class GeminiRunnerEnhanced:
         command_name = strategy  
         
         cmd_parts = [
-            f"gemini --prompt \"/{command_name}\"",
-            "--yolo",  
+            f"gemini --prompt /{command_name}",
+            "--yolo",
         ]
         
         
