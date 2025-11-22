@@ -19,7 +19,7 @@ from .dataset import CVERecord
 
 # Log
 # - settings file
-# - prompt templates
+# - default prompt templates as toml
 
 
 class ScriptGenerator:
@@ -132,7 +132,8 @@ echo "🎉 Claude Code environment setup complete!"
     def generate_cve_fix_command(self, record: CVERecord, 
                                 strategy: str = "iterative") -> str:
         """Generate CVE fix command file"""
-        template_file = f"{strategy}.md"
+        # Gemini uses .toml files for command templates
+        template_file = f"{strategy}.toml"
         template_path = self.templates_dir / template_file
         
         if not template_path.exists():
@@ -154,9 +155,20 @@ echo "🎉 Claude Code environment setup complete!"
     
     def _generate_default_command(self, record: CVERecord, strategy: str) -> str:
         if strategy == "iterative":
-            return f"""
-description = "CVE Fix Task - Iterative Repair {record.cve_id}"
-prompt = "You are a Claude Code CVE fix expert. Please execute the following automated CVE fix process in the container environment:
+            return f"""---
+allowed-tools: 
+  - "Bash(*)"
+  - "text_editor(*)" 
+  - "Read(*)"
+  - "Grep(*)"
+  - "Web Fetch(*)"
+  - "Todo(*)"
+  - "Memory(*)"
+description: "CVE Fix Task - Iterative Repair {record.cve_id}"
+auto-run: true
+---
+
+You are a Claude Code CVE fix expert. Please execute the following automated CVE fix process in the container environment:
 
 ## Current Environment Info
 - CVE ID: {record.cve_id}
@@ -212,7 +224,7 @@ If more repair is needed:
 - Patch contains effective fix for CVE vulnerability
 - Fix does not break normal functionality of the code
 
-Start the first repair analysis iteration now."
+Start the first repair analysis iteration now.
 """
         else:  # smart strategy
             return f"""---
