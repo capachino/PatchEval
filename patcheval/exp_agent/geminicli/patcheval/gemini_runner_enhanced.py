@@ -254,14 +254,15 @@ class GeminiRunnerEnhanced:
             templates_dir = Path("templates")
             script_gen = ScriptGenerator(templates_dir)
             fix_command = script_gen.generate_cve_fix_command(record, strategy)
-            command_file = f"{self.work_dir}/.claude/commands/{strategy}.md"
+            command_file = f"{self.work_dir}/.gemini/commands/{strategy}.toml"
             
             self._write_file_to_container(command_file, fix_command)
             
-            self._log_process_step("command_generation", f"generate file: {strategy}.md")
+            self._log_process_step("command_generation", f"generate file: {strategy}.toml")
             
             settings_content = ScriptGenerator.generate_settings_file()
-            settings_file = f"{self.work_dir}/.claude/settings.json"
+            # TODO: Gemini CLI might not support workspace settings.            
+            settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
             if self.settings_file:
@@ -273,7 +274,7 @@ class GeminiRunnerEnhanced:
                         with open(source_settings_path, 'r', encoding='utf-8') as f:
                             custom_settings_content = f.read()
                         
-                        container_settings_path = f"{self.work_dir}/.claude/{self.settings_file}"
+                        container_settings_path = f"{self.work_dir}/.gemini/{self.settings_file}"
                         self._write_file_to_container(container_settings_path, custom_settings_content)
                         self.logger.info(f" {self.settings_file} -> {container_settings_path}")
                         self._log_process_step("settings_copy", f"{self.settings_file}")
@@ -377,17 +378,15 @@ class GeminiRunnerEnhanced:
         command_name = strategy  
         
         cmd_parts = [
-            f"gemini /{command_name}",
-            "--print",  
-            "--dangerously-skip-permissions",  
-            "--permission-mode bypassPermissions",  
+            f"gemini --prompt \"/{command_name}\"",
+            "--yolo",  
         ]
         
         
         if self.enable_detailed_logging:
             cmd_parts.extend([
                 "--output-format stream-json",  
-                "--verbose"  
+                "--debug"
             ])
         else:
             cmd_parts.append("--output-format json")  

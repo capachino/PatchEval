@@ -17,6 +17,11 @@ from typing import Dict, Any
 from .dataset import CVERecord
 
 
+# Log
+# - settings file
+# - prompt templates
+
+
 class ScriptGenerator:
     
     def __init__(self, templates_dir: Path):
@@ -149,20 +154,9 @@ echo "🎉 Claude Code environment setup complete!"
     
     def _generate_default_command(self, record: CVERecord, strategy: str) -> str:
         if strategy == "iterative":
-            return f"""---
-allowed-tools: 
-  - "Bash(*)"
-  - "text_editor(*)" 
-  - "Read(*)"
-  - "Grep(*)"
-  - "Web Fetch(*)"
-  - "Todo(*)"
-  - "Memory(*)"
-description: "CVE Fix Task - Iterative Repair {record.cve_id}"
-auto-run: true
----
-
-You are a Claude Code CVE fix expert. Please execute the following automated CVE fix process in the container environment:
+            return f"""
+description = "CVE Fix Task - Iterative Repair {record.cve_id}"
+prompt = "You are a Claude Code CVE fix expert. Please execute the following automated CVE fix process in the container environment:
 
 ## Current Environment Info
 - CVE ID: {record.cve_id}
@@ -218,7 +212,7 @@ If more repair is needed:
 - Patch contains effective fix for CVE vulnerability
 - Fix does not break normal functionality of the code
 
-Start the first repair analysis iteration now.
+Start the first repair analysis iteration now."
 """
         else:  # smart strategy
             return f"""---
@@ -301,21 +295,10 @@ exit [lindex $result 3]
     def generate_settings_file() -> str:
 
         settings = {
-            "permissions": {
-                "allow": [
-                    "Bash(*)", 
-                    "text_editor(*)", 
-                    "Read(*)", 
-                    "Grep(*)", 
-                    "Web Fetch(*)",  
-                    "Todo(*)", 
-                    "Memory(*)"  
-                ],
-                "deny": []
-            },
-            "env": {
-                "CLAUDE_CODE_AUTO_CONNECT_IDE": "false",
-                "DISABLE_INTERLEAVED_THINKING": "true"
+            "security": {
+                "auth": {
+                    "selectedType": "gemini-api-key"
+                }
             }
         }
         

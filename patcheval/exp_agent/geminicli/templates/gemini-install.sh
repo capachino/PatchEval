@@ -15,6 +15,9 @@
 
 #!/bin/bash
 
+# Log
+# - Fixed possible bug with API key placeholder
+
 set -e  
 
 echo "=== Gemini Environment Setup Script ==="
@@ -63,7 +66,7 @@ export PATH="$HOME/.npm-global/bin:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 
 # Gemini API configuration
-export GEMINI_API_KEY='*****'
+export GEMINI_API_KEY='{{GEMINI_API_KEY}}'
 
 # Useful aliases
 alias ll='ls -la'
