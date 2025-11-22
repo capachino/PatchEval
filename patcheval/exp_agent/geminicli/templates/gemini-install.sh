@@ -17,16 +17,16 @@
 
 set -e  
 
-echo "=== Claude Code Environment Setup Script ==="
+echo "=== Gemini Environment Setup Script ==="
 
-if id "claude_user" &>/dev/null; then
-    echo "🗑️  Removing existing claude_user..."
-    userdel -r claude_user 2>/dev/null || true
+if id "gemini_user" &>/dev/null; then
+    echo "🗑️  Removing existing gemini_user..."
+    userdel -r gemini_user 2>/dev/null || true
 fi
 
 
-echo "👤 Creating claude_user..."
-adduser --disabled-password --gecos '' claude_user >/dev/null
+echo "👤 Creating gemini_user..."
+adduser --disabled-password --gecos '' gemini_user >/dev/null
 
 
 if ! command -v node &> /dev/null; then
@@ -40,18 +40,18 @@ fi
 
 
 echo "🔧 Setting workspace permissions..."
-chown -R claude_user:claude_user /workspace 2>/dev/null || true
+chown -R gemini_user:gemini_user /workspace 2>/dev/null || true
 
 
-echo "⚙️  Installing Claude Code..."
-su - claude_user << 'USEREOF'
+echo "⚙️  Installing Gemini Code..."
+su - gemini_user << 'USEREOF'
 
 npm config set prefix ~/.npm-global >/dev/null 2>&1
 
 
 mkdir -p ~/.npm-global/bin
 
-npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+npm install -g @google/gemini-cli >/dev/null 2>&1
 
 
 NPM_PREFIX=$(npm config get prefix)
@@ -62,10 +62,8 @@ cat > ~/.bashrc << 'BASHEOF'
 export PATH="$HOME/.npm-global/bin:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 
-# Claude Code API configuration
-export ANTHROPIC_BASE_URL='http://host.docker.internal:$PORT$'
-export ANTHROPIC_API_KEY='*****'
-export ANTHROPIC_AUTH_TOKEN='*******'
+# Gemini API configuration
+export GEMINI_API_KEY='*****'
 
 # Useful aliases
 alias ll='ls -la'
@@ -76,58 +74,58 @@ BASHEOF
 source ~/.bashrc
 
 
-if [ -L ~/.npm-global/bin/claude ]; then
-    target=$(readlink ~/.npm-global/bin/claude)
+if [ -L ~/.npm-global/bin/gemini ]; then
+    target=$(readlink ~/.npm-global/bin/gemini)
     if [ -x "$target" ]; then
-        echo "✅ Claude Code installation verified"
+        echo "✅ Gemini installation verified"
     else
         chmod +x "$target"
-        echo "✅ Claude Code permissions fixed"
+        echo "✅ Gemini permissions fixed"
     fi
 else
-    echo "⚠️  Claude symlink not found, checking alternatives..."
+    echo "⚠️  Gemini symlink not found, checking alternatives..."
 fi
 
 
-if ~/.npm-global/bin/claude --version >/dev/null 2>&1; then
-    echo "✅ Claude Code ready to use"
-elif command -v claude &> /dev/null; then
-    echo "✅ Claude Code found in PATH"
+if ~/.npm-global/bin/gemini --version >/dev/null 2>&1; then
+    echo "✅ Gemini ready to use"
+elif command -v gemini &> /dev/null; then
+    echo "✅ Gemini found in PATH"
 else
-    echo "❌ Claude Code installation may have issues"
+    echo "❌ Gemini installation may have issues"
 fi
 USEREOF
 
-echo "📁 Setting up Claude commands directory..."
-su - claude_user << 'CMDEOF'
-mkdir -p /workspace/markdown-it/.claude/commands 2>/dev/null || true
+echo "📁 Setting up Gemini commands directory..."
+su - gemini_user << 'CMDEOF'
+mkdir -p /workspace/markdown-it/.gemini/commands 2>/dev/null || true
 CMDEOF
 
 echo "🔍 Final verification..."
-su - claude_user << 'VERIFYEOF'
+su - gemini_user << 'VERIFYEOF'
 
 source ~/.bashrc
 
 
-if command -v claude &> /dev/null; then
-    echo "✅ Claude Code ready: $(claude --version 2>/dev/null || echo 'version check failed')"
-elif ~/.npm-global/bin/claude --version >/dev/null 2>&1; then
-    echo "✅ Claude Code available via direct path"
+if command -v gemini &> /dev/null; then
+    echo "✅ Gemini ready: $(gemini --version 2>/dev/null || echo 'version check failed')"
+elif ~/.npm-global/bin/gemini --version >/dev/null 2>&1; then
+    echo "✅ Gemini available via direct path"
 else
-    echo "❌ Claude Code not accessible"
-    echo "💡 Use full path: ~/.npm-global/bin/claude"
+    echo "❌ Gemini not accessible"
+    echo "💡 Use full path: ~/.npm-global/bin/gemini"
 fi
 
 echo "🔧 Environment: Node $(node --version), NPM $(npm --version)"
-echo "🔑 API configured: ${ANTHROPIC_API_KEY:0:10}***"
+echo "🔑 API configured: ${GEMINI_API_KEY:0:10}***"
 VERIFYEOF
 
 echo ""
 echo "🎉 Setup Complete!"
 echo ""
 echo "Usage:"
-echo "  su - claude_user"
+echo "  su - gemini_user"
 echo "  cd /workspace/your-project"
-echo "  claude /your-command"
+echo "  gemini /your-command"
 echo ""
-echo "💡 If 'claude' not found, use: ~/.npm-global/bin/claude"
+echo "💡 If 'gemini' not found, use: ~/.npm-global/bin/gemini"

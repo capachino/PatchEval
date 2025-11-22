@@ -26,7 +26,8 @@ from .dataset import load_dataset
 
 # Log
 # - Removed `claude_timeout` related code
-# - `api-provider` choices updated to only Gemini for now.
+# - `api-provider` choices updated to only Gemini for now
+# - Removed `port` arg
 
 
 def get_available_strategies() -> list[str]:
@@ -72,7 +73,6 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--save-process-logs", action="store_true")
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true")
     batch_parser.add_argument("--settings", type=str)
-    batch_parser.add_argument("--port", type=str)
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -92,7 +92,6 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--save-process-logs", action="store_true")
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true")
     single_parser.add_argument("--settings", type=str)
-    single_parser.add_argument("--port", type=str)
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -183,8 +182,7 @@ def handle_batch_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None),
-            port=args.port
+            settings_file=getattr(args, 'settings', None)
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -240,8 +238,7 @@ def handle_single_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None),
-            port = args.port
+            settings_file=getattr(args, 'settings', None)
         )
         
         if result["is_success"]:

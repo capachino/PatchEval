@@ -29,7 +29,8 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 
 # Log
 # - Removed `claude_timeout` related code
-# - Updated `api_provider` handling to include only Gemini for now.
+# - Updated `api_provider` handling to include only Gemini for now
+# - Removed `port` arg
 
 def run_single_cve(record: CVERecord,
                   outputs_root: Path,
@@ -44,8 +45,7 @@ def run_single_cve(record: CVERecord,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None,
-                  port: str="8082") -> Dict[str, Any]:
+                  settings_file: Optional[str] = None) -> Dict[str, Any]:
     
     if semaphore is None:
         semaphore = threading.Semaphore(1)
@@ -102,7 +102,7 @@ def run_single_cve(record: CVERecord,
             settings_file=settings_file
         )
         
-        if not gemini.setup_environment(record, strategy, api_key, api_provider, port):
+        if not gemini.setup_environment(record, strategy, api_key, api_provider):
             pass
         
         result["stage"] = "gemini_execution"

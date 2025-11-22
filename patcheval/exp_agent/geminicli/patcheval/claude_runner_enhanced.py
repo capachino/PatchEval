@@ -24,6 +24,13 @@ from .dataset import CVERecord
 from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, EnhancedProcessStreamReader
 
 
+# Log
+# - `setup_environment`
+#     - removed `port` arg
+#     - use `api_key` directly
+#     - removed ANTHROPIC env vars related code
+
+
 class ToolUsageLimiter:
     
     def __init__(self, max_calls_per_tool: Optional[Dict[str, int]] = None, max_total_calls: Optional[int] = None):
@@ -157,7 +164,7 @@ class GeminiRunnerEnhanced:
         self.temp_log_file = None
         self.cve_id = None
     def setup_environment(self, record: CVERecord, strategy: str, 
-                         api_key: str, api_provider: str, port: str) -> bool:
+                         api_key: str, api_provider: str) -> bool:
         try:
             self.cve_id = record.cve_id  
             
@@ -170,22 +177,16 @@ class GeminiRunnerEnhanced:
                 self.work_dir
             )
             
-            host_base_url = os.getenv('ANTHROPIC_BASE_URL', 'https://api.anthropic.com')
-            host_api_key = os.getenv('ANTHROPIC_API_KEY', '')
+            install_script = install_script.replace("{{GEMINI_API_KEY}}", api_key)
             
-            install_script = install_script.replace("{{ANTHROPIC_BASE_URL}}", host_base_url)
-            install_script = install_script.replace("{{ANTHROPIC_API_KEY}}", host_api_key)
-            install_script = install_script.replace("{{ANTHROPIC_AUTH_TOKEN}}", host_api_key)
-            install_script = install_script.replace("$PORT$", port)
-            
-            self._write_file_to_container("/tmp/install_claude.sh", install_script)
-            self._exec_in_container("chmod", "+x /tmp/install_claude.sh")
+            self._write_file_to_container("/tmp/install_gemini.sh", install_script)
+            self._exec_in_container("chmod", "+x /tmp/install_gemini.sh")
             
             self._log_process_step("gemini_install", "install Gemini")
             
             
             try:
-                install_cmd = f"bash /tmp/install_claude.sh >/tmp/install.log 2>&1 && echo 'INSTALL_SUCCESS' || echo 'INSTALL_FAILED'"
+                install_cmd = f"bash /tmp/install_gemini.sh >/tmp/install.log 2>&1 && echo 'INSTALL_SUCCESS' || echo 'INSTALL_FAILED'"
                 install_status = self._exec_in_container_with_output("bash", f"-c '{install_cmd}'").strip()
                 
                 if "INSTALL_SUCCESS" in install_status:
@@ -285,6 +286,7 @@ class GeminiRunnerEnhanced:
             return True
             
         except Exception as e:
+            self.logger.error(f"setup error: {e}")
             return False
     
     def execute_cve_repair(self, strategy: str = "iterative", 
@@ -851,7 +853,7 @@ class GeminiRunnerEnhanced:
                 success = False  
                 self._finalize_real_time_log(success)
             
-            self._exec_in_container("rm", "-f /tmp/install_claude.sh")
+            self._exec_in_container("rm", "-f /tmp/install_gemini.sh")
         except Exception as e:
             self.logger.warning(f"fail: {e}")
     
