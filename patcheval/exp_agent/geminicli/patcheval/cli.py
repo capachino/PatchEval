@@ -29,6 +29,7 @@ from .dataset import load_dataset
 # - `api-provider` choices updated to only Gemini for now
 # - Removed `port` arg
 # - Changed default strategy to "default"
+# - Changed save-process-logs and allow-git-diff-fallback default to True
 
 def get_available_strategies() -> list[str]:
     
@@ -70,8 +71,8 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--tool-limits", type=str, help="(tool1:limit1,tool2:limit2 or total:500)")
     batch_parser.add_argument("--max-cost-usd", type=float, default=10.0)
     batch_parser.add_argument("--enable-detailed-logging", action="store_true", default=True,)
-    batch_parser.add_argument("--save-process-logs", action="store_true")
-    batch_parser.add_argument("--allow-git-diff-fallback", action="store_true")
+    batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
+    batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     batch_parser.add_argument("--settings", type=str)
     
     # Single command  
@@ -89,8 +90,8 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--tool-limits", type=str)
     single_parser.add_argument("--max-cost-usd", type=float, default=10.0)
     single_parser.add_argument("--enable-detailed-logging", action="store_true", default=True)
-    single_parser.add_argument("--save-process-logs", action="store_true")
-    single_parser.add_argument("--allow-git-diff-fallback", action="store_true")
+    single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
+    single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     single_parser.add_argument("--settings", type=str)
     
     # Cleanup command
