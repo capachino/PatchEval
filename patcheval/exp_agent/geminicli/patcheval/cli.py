@@ -28,7 +28,7 @@ from .dataset import load_dataset
 # - Removed `claude_timeout` related code
 # - `api-provider` choices updated to only Gemini for now
 # - Removed `port` arg
-
+# - Changed default strategy to "default"
 
 def get_available_strategies() -> list[str]:
     
@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--timeout", type=str, default="45m")
     single_parser.add_argument("--keep-container", action="store_true")
     single_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
-    single_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
+    single_parser.add_argument("--strategy", choices=get_available_strategies(), default="default")
     single_parser.add_argument("--interactive", action="store_true")
     
 

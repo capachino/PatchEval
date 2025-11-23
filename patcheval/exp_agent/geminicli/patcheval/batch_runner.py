@@ -26,6 +26,8 @@ from .single_runner import run_single_cve
 # Log
 # - Removed `claude_timeout` related code
 # - Port arg removed
+# - Changed default strategy to "default"
+
 
 def _auto_generate_readable_log(outputs_root: Path, problem_id: str):
     try:
@@ -91,7 +93,7 @@ def run_batch_cves(dataset_path: Path,
                   outputs_root: Path,
                   max_workers: int = 1,
                   timeout_seconds: int = 2700,
-                  strategy: str = "iterative",
+                  strategy: str = "default",
                   api_provider: str = "gemini",
                   resume: bool = False,
                   limit: Optional[int] = None,

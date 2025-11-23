@@ -86,6 +86,7 @@ def run_work_container_no_mount(image_name: str,
                 cpu_quota=400000,  # 4 CPU cores
                 extra_hosts={"host.docker.internal":"172.17.0.1"},
                 volumes={
+                    # TODO: what is this? can it be removed?
                     "claude_tgz": {
                         "bind": "/workspace/claude_tgz",
                         "mode": "rw"

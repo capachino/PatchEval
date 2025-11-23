@@ -310,11 +310,6 @@ class GeminiRunnerEnhanced:
             
             
             env_vars = []
-            if self.enable_detailed_logging:
-                env_vars.extend([
-                    "ANTHROPIC_LOG=debug",
-                    "CLAUDE_CODE_ENABLE_TELEMETRY=1"
-                ])
             
            
             env_prefix = " ".join(env_vars) + " " if env_vars else ""

@@ -46,7 +46,7 @@ echo "🔧 Setting workspace permissions..."
 chown -R gemini_user:gemini_user /workspace 2>/dev/null || true
 
 
-echo "⚙️  Installing Gemini Code..."
+echo "⚙️  Installing Gemini ..."
 su - gemini_user << 'USEREOF'
 
 npm config set prefix ~/.npm-global >/dev/null 2>&1
