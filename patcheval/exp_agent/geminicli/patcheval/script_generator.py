@@ -20,6 +20,7 @@ from .dataset import CVERecord
 # Log
 # - settings file
 # - default prompt templates as toml
+# - exclude google search tool in settings
 
 
 class ScriptGenerator:
@@ -311,7 +312,8 @@ exit [lindex $result 3]
                 "auth": {
                     "selectedType": "gemini-api-key"
                 }
-            }
+            },
+            "excludeTools": ["google_web_search"]
         }
         
         import json

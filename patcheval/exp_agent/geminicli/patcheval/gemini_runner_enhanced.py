@@ -261,7 +261,6 @@ class GeminiRunnerEnhanced:
             self._log_process_step("command_generation", f"generate file: {strategy}.toml")
             
             settings_content = ScriptGenerator.generate_settings_file()
-            # TODO: Gemini CLI might not support workspace settings.            
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
