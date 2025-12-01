@@ -31,6 +31,7 @@ from .dataset import load_dataset
 # - Changed default strategy to "default"
 # - Changed save-process-logs and allow-git-diff-fallback default to True
 
+
 def get_available_strategies() -> list[str]:
     
     templates_dir = Path(__file__).parent.parent / "templates"
@@ -64,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--limit", type=int)
     batch_parser.add_argument("--resume", action="store_true")
     batch_parser.add_argument("--keep-containers", action="store_true")
-    batch_parser.add_argument("--strategy", choices=get_available_strategies(), default="iterative")
+    batch_parser.add_argument("--strategy", choices=get_available_strategies(), default="default")
     batch_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     
 
