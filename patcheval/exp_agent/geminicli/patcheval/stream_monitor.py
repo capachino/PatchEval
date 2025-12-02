@@ -21,6 +21,10 @@ from typing import Dict, Any, Optional, Callable
 from collections import defaultdict
 
 
+# Log
+# - Updated `_handle_json_message` to parse Gemini output
+
+
 class RealTimeStreamMonitor:
     
     def __init__(self, 
@@ -306,24 +310,39 @@ class RealTimeStreamMonitor:
 
         message_type = data.get('type', '')
         
-
-        if message_type == 'assistant':
-            message = data.get('message', {})
-            content = message.get('content', [])
+        if message_type == 'tool_use':
+            tool_name = data.get('tool_name', '')
+            tool_id = data.get('tool_id', '')
             
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict) and item.get('type') == 'tool_use':
-                        tool_name = item.get('name', '')
-                        tool_id = item.get('id', '')
+            if tool_name:
+                self._handle_tool_call(tool_name, tool_id)
+                
+            return
+                
+        # Gemini does not produce stats in real-time. This is the last message.
+        if message_type == 'result':
+            stats = data.get('stats', {})
+            self.total_input_tokens = stats.get('input_tokens', 0)
+            self.total_output_tokens = stats.get('output_tokens', 0)
+            return
+            
+        # if message_type == 'assistant':
+        #     message = data.get('message', {})
+        #     content = message.get('content', [])
+            
+        #     if isinstance(content, list):
+        #         for item in content:
+        #             if isinstance(item, dict) and item.get('type') == 'tool_use':
+        #                 tool_name = item.get('name', '')
+        #                 tool_id = item.get('id', '')
                         
-                        if tool_name:
-                            self._handle_tool_call(tool_name, tool_id)
+        #                 if tool_name:
+        #                     self._handle_tool_call(tool_name, tool_id)
             
 
-            usage = message.get('usage', {})
-            if usage:
-                self._handle_usage_data(usage, message.get('model', ''))
+        #     usage = message.get('usage', {})
+        #     if usage:
+        #         self._handle_usage_data(usage, message.get('model', ''))
     
     def _handle_tool_call(self, tool_name: str, tool_id: str = "") -> None:
 
