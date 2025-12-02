@@ -16,6 +16,12 @@ import utils
 import os
 from pathlib import Path
 import argparse
+
+
+# Log
+# - Skip over records without generated patches
+
+
 def main():
     test_data = json.load(open(args.test_data_path))
     cve2language = {it['cve_id']: it["programing_language"] for it in test_data}
@@ -33,6 +39,7 @@ def main():
             
             erro_cve.append(cve_id)
             fix_patch = ""
+            continue
         else:
             with open(patch_path) as f:
                 fix_patch = f.read()

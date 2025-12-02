@@ -29,6 +29,7 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 #     - removed `port` arg
 #     - use `api_key` directly
 #     - removed ANTHROPIC env vars related code
+# - Include Gemini output in process failure exception message
 
 
 class ToolUsageLimiter:
@@ -656,7 +657,7 @@ class GeminiRunnerEnhanced:
             return_code = process.returncode
             if return_code is not None and return_code != 0:
                 if not self.execution_stopped: 
-                    raise RuntimeError(f"command exec fail, return code: {return_code}")
+                    raise RuntimeError(f"command exec fail, return code: {return_code}, result: {result}")
             
             return result
             
