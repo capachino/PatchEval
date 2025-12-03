@@ -101,11 +101,10 @@ def run_single_cve(record: CVERecord,
             max_cost_usd=max_cost_usd,
             enable_detailed_logging=enable_detailed_logging,
             allow_git_diff_fallback=allow_git_diff_fallback,
-            settings_file=settings_file,
-            model=model
+            settings_file=settings_file
         )
         
-        if not gemini.setup_environment(record, strategy, api_key, api_provider):
+        if not gemini.setup_environment(record, strategy, api_key, api_provider, model):
             pass
         
         result["stage"] = "gemini_execution"

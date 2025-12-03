@@ -305,7 +305,7 @@ exit [lindex $result 3]
 """
     
     @staticmethod 
-    def generate_settings_file() -> str:
+    def generate_settings_file(model: str) -> str:
 
         settings = {
             "security": {
@@ -315,6 +315,9 @@ exit [lindex $result 3]
             },
             "excludeTools": ["google_web_search"]
         }
+        
+        if model == '3pro':
+            settings["general"] = {"previewFeatures": True}
         
         import json
         return json.dumps(settings, indent=2, ensure_ascii=False)

@@ -133,13 +133,11 @@ class GeminiRunnerEnhanced:
                  max_cost_usd: float = 10.0,
                  enable_detailed_logging: bool = True,
                  allow_git_diff_fallback: bool = False,
-                 settings_file: Optional[str] = None,
-                 model: str = "25pro"):
+                 settings_file: Optional[str] = None):
         self.container_id = container_id
         self.work_dir = work_dir
         self.allow_git_diff_fallback = allow_git_diff_fallback
         self.settings_file = settings_file
-        self.model = model
         self.logger = logging.getLogger(__name__)
         
         self.stream_monitor = RealTimeStreamMonitor(
@@ -167,7 +165,7 @@ class GeminiRunnerEnhanced:
         self.temp_log_file = None
         self.cve_id = None
     def setup_environment(self, record: CVERecord, strategy: str, 
-                         api_key: str, api_provider: str) -> bool:
+                         api_key: str, api_provider: str, model: str) -> bool:
         try:
             self.cve_id = record.cve_id  
             
@@ -263,7 +261,7 @@ class GeminiRunnerEnhanced:
             
             self._log_process_step("command_generation", f"generate file: {strategy}.toml")
             
-            settings_content = ScriptGenerator.generate_settings_file()
+            settings_content = ScriptGenerator.generate_settings_file(model)
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
