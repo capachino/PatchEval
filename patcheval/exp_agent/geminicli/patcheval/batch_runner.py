@@ -106,7 +106,8 @@ def run_batch_cves(dataset_path: Path,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None) -> Dict[str, Any]:
+                  settings_file: Optional[str] = None,
+                  model: str = "25pro") -> Dict[str, Any]:
     
     start_time = time.time()
     logger = logging.getLogger(__name__)
@@ -153,7 +154,8 @@ def run_batch_cves(dataset_path: Path,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
                 allow_git_diff_fallback=allow_git_diff_fallback,
-                settings_file=settings_file
+                settings_file=settings_file,
+                model=model
             ): record for record in records
         }
         

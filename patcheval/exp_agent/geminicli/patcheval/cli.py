@@ -30,6 +30,7 @@ from .dataset import load_dataset
 # - Removed `port` arg
 # - Changed default strategy to "default"
 # - Changed save-process-logs and allow-git-diff-fallback default to True
+# - Added a `model` arg to specify the Gemini model to use
 
 
 def get_available_strategies() -> list[str]:
@@ -75,6 +76,7 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     batch_parser.add_argument("--settings", type=str)
+    batch_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -86,7 +88,7 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     single_parser.add_argument("--strategy", choices=get_available_strategies(), default="default")
     single_parser.add_argument("--interactive", action="store_true")
-    
+
 
     single_parser.add_argument("--tool-limits", type=str)
     single_parser.add_argument("--max-cost-usd", type=float, default=10.0)
@@ -94,6 +96,7 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     single_parser.add_argument("--settings", type=str)
+    single_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -184,7 +187,8 @@ def handle_batch_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None)
+            settings_file=getattr(args, 'settings', None),
+            model=args.model
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -240,7 +244,8 @@ def handle_single_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None)
+            settings_file=getattr(args, 'settings', None),
+            model=args.model
         )
         
         if result["is_success"]:

@@ -133,11 +133,13 @@ class GeminiRunnerEnhanced:
                  max_cost_usd: float = 10.0,
                  enable_detailed_logging: bool = True,
                  allow_git_diff_fallback: bool = False,
-                 settings_file: Optional[str] = None):
+                 settings_file: Optional[str] = None,
+                 model: str = "25pro"):
         self.container_id = container_id
         self.work_dir = work_dir
         self.allow_git_diff_fallback = allow_git_diff_fallback
         self.settings_file = settings_file
+        self.model = model
         self.logger = logging.getLogger(__name__)
         
         self.stream_monitor = RealTimeStreamMonitor(

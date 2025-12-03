@@ -46,7 +46,8 @@ def run_single_cve(record: CVERecord,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None) -> Dict[str, Any]:
+                  settings_file: Optional[str] = None,
+                  model: str = "25pro") -> Dict[str, Any]:
     
     if semaphore is None:
         semaphore = threading.Semaphore(1)
@@ -100,7 +101,8 @@ def run_single_cve(record: CVERecord,
             max_cost_usd=max_cost_usd,
             enable_detailed_logging=enable_detailed_logging,
             allow_git_diff_fallback=allow_git_diff_fallback,
-            settings_file=settings_file
+            settings_file=settings_file,
+            model=model
         )
         
         if not gemini.setup_environment(record, strategy, api_key, api_provider):
