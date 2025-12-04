@@ -30,6 +30,7 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 #     - use `api_key` directly
 #     - removed ANTHROPIC env vars related code
 # - Include Gemini output in process failure exception message
+# - Remove `_check_repair_success` as it confuses error reporting
 
 
 class ToolUsageLimiter:
@@ -345,9 +346,6 @@ class GeminiRunnerEnhanced:
             
             self._analyze_real_time_results()
             
-            if not self.execution_stopped:
-                success = success and self._check_repair_success(result)
-                
             self._log_process_step("repair_result", f"fix{'success' if success else 'fail'}")
             
             patch_content = self._extract_patch() if success else ""
@@ -750,27 +748,6 @@ class GeminiRunnerEnhanced:
                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         self.logger.debug(f"success: {file_path}")
-    
-    def _check_repair_success(self, output: str) -> bool:
-        success_indicators = [
-            "fix success", "Task completed", "CVE repair task completed",
-            "final-cve-fix.patch", "Successfully generated patch",
-            "Smart repair completed", "patch generated successfully"
-        ]
-        
-        success = any(indicator in output for indicator in success_indicators)
-        
-        if success:
-            self.logger.info("success")
-        else:
-            self.logger.warning("fail")
-            
-        patch_exists = self._check_patch_file_exists()
-        if patch_exists:
-            self.logger.info("patch exists")
-            success = True
-            
-        return success
     
     def _check_patch_file_exists(self) -> bool:
         patch_locations = [

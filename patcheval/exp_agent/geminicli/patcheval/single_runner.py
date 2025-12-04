@@ -31,6 +31,7 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 # - Removed `claude_timeout` related code
 # - Updated `api_provider` handling to include only Gemini for now
 # - Removed `port` arg
+# - Respect `success` result from execute_cve_repair
 
 
 def run_single_cve(record: CVERecord,
@@ -112,8 +113,10 @@ def run_single_cve(record: CVERecord,
         gemini_start = time.time()
         success, output_log, patch_content = gemini.execute_cve_repair(
             strategy)
-        gemini_duration = time.time() - gemini_start
         
+        result["is_success"] = success
+        
+        gemini_duration = time.time() - gemini_start        
         result["agent_duration"] = gemini_duration
         
         if not success:
@@ -201,9 +204,7 @@ def run_single_cve(record: CVERecord,
             process_log_path.parent.mkdir(exist_ok=True)
             gemini.save_process_log(str(process_log_path))
         
-        result["is_success"] = True
-        
-        if result.get("patch_source") == "git_diff_fallback":
+        if result["is_success"] and result.get("patch_source") == "git_diff_fallback":
             result["is_success"] = False  
             result["is_partial_success"] = True  
             result["warning"] = ""
