@@ -15,7 +15,7 @@
 prefix=$1
 
 python evaluation/process_data.py \
-    --output_dir outputs/${prefix}/patches \
+    --output_dir outputs/${prefix} \
     --process_data_path evaluation/process_datas/${prefix}_process.jsonl \
     --test_data_path ../../datasets/patcheval_dataset.json
 
