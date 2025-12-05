@@ -30,6 +30,7 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 #     - use `api_key` directly
 #     - removed ANTHROPIC env vars related code
 # - Include Gemini output in process failure exception message
+# - Include Gemini output in timeout exception message
 # - Remove `_check_repair_success` as it confuses error reporting
 
 
@@ -330,9 +331,10 @@ class GeminiRunnerEnhanced:
                 else:
                     success = True
                     
-            except subprocess.TimeoutExpired:
+            except subprocess.TimeoutExpired as e:
                 self._update_real_time_log(status="timeout")
-                result = f"Gemini execution timeout after {timeout} seconds"
+                result = str(e)
+                # result = f"Gemini execution timeout after {timeout} seconds"
                 success = False
             except Exception as e:
                 self._log_process_step("command_error", f"execution error: {str(e)}")
@@ -659,7 +661,11 @@ class GeminiRunnerEnhanced:
             
             return result
             
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
+            result = reader.read_with_monitoring(timeout=timeout_seconds)
+            raise subprocess.TimeoutExpired(
+                e.cmd, e.timeout, f"timeout fail: {timeout_seconds}s, result: {result}"
+            ) from e
             self.logger.warning(f"fail: {timeout_seconds}s")
             raise
         except Exception as e:
