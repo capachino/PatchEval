@@ -32,99 +32,7 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 # - Include Gemini output in process failure exception message
 # - Include Gemini output in timeout exception message
 # - Remove `_check_repair_success` as it confuses error reporting
-
-
-class ToolUsageLimiter:
-    
-    def __init__(self, max_calls_per_tool: Optional[Dict[str, int]] = None, max_total_calls: Optional[int] = None):
-        self.max_calls = max_calls_per_tool or {}
-        self.max_total_calls = max_total_calls
-        self.current_calls = defaultdict(int)
-        self.total_calls = 0
-        self.logger = logging.getLogger(__name__)
-    
-    def check_and_increment(self, tool_name: str) -> bool:
-        if self.max_total_calls is not None and self.total_calls >= self.max_total_calls:
-            return False
-        
-        
-        current = self.current_calls[tool_name]
-        limit = self.max_calls.get(tool_name, float('inf'))
-        
-        if current >= limit:
-            self.logger.warning(f"tool {tool_name}  {limit}")
-            return False
-            
-        
-        self.current_calls[tool_name] += 1
-        self.total_calls += 1
-        
-        
-        if self.max_total_calls is not None:
-            self.logger.debug(f"tool call: {tool_name} ({self.current_calls[tool_name]}time), all: {self.total_calls}/{self.max_total_calls}")
-        else:
-            self.logger.debug(f"tool {tool_name} call times: {self.current_calls[tool_name]}/{limit}")
-        
-        return True
-    
-    def get_usage_stats(self) -> Dict[str, Any]:
-        stats = {
-            'per_tool': dict(self.current_calls),
-            'total_calls': self.total_calls
-        }
-        
-        if self.max_total_calls is not None:
-            stats['total_limit'] = self.max_total_calls
-            stats['total_remaining'] = self.max_total_calls - self.total_calls
-            
-        return stats
-
-
-class CostController:
-    
-    def __init__(self, max_cost_usd: float = 10.0):
-        self.max_cost = max_cost_usd
-        self.current_cost = 0.0
-        self.token_counts = {'input': 0, 'output': 0}
-        self.logger = logging.getLogger(__name__)
-
-        self.pricing = {
-            'input': 3.0,   # $3 per 1M input tokens
-            'output': 15.0  # $15 per 1M output tokens
-        }
-    
-    def estimate_tokens(self, text: str) -> int:
-        return len(text) // 4
-    
-    def add_usage(self, input_text: str = "", output_text: str = "") -> bool:
-        input_tokens = self.estimate_tokens(input_text)
-        output_tokens = self.estimate_tokens(output_text)
-        
-        input_cost = (input_tokens / 1_000_000) * self.pricing['input']
-        output_cost = (output_tokens / 1_000_000) * self.pricing['output']
-        new_cost = input_cost + output_cost
-        
-        if self.current_cost + new_cost > self.max_cost:
-            self.logger.warning(f"over budget: ${self.current_cost + new_cost:.4f} > ${self.max_cost}")
-            return False
-            
-        self.current_cost += new_cost
-        self.token_counts['input'] += input_tokens
-        self.token_counts['output'] += output_tokens
-        
-        self.logger.info(f"accumulated cost: ${self.current_cost:.4f}/${self.max_cost} (in: {input_tokens}, out: {output_tokens} tokens)")
-        return True
-    
-    def get_cost_summary(self) -> Dict[str, Any]:
-        return {
-            'current_cost_usd': self.current_cost,
-            'max_cost_usd': self.max_cost,
-            'budget_remaining': self.max_cost - self.current_cost,
-            'budget_used_percent': (self.current_cost / self.max_cost) * 100,
-            'total_tokens': sum(self.token_counts.values()),
-            'input_tokens': self.token_counts['input'],
-            'output_tokens': self.token_counts['output']
-        }
+# - Remove `CostController` and `ToolUsageLimiter`
 
 
 class GeminiRunnerEnhanced:
@@ -147,13 +55,7 @@ class GeminiRunnerEnhanced:
             max_total_tool_calls=max_total_tool_calls,
             max_cost_usd=max_cost_usd
         )
-        
-        self.tool_limiter = ToolUsageLimiter(
-            max_calls_per_tool=tool_limits,
-            max_total_calls=max_total_tool_calls
-        )
-        self.cost_controller = CostController(max_cost_usd)
-        
+
         self.enable_detailed_logging = enable_detailed_logging
         
         self.process_log = []
@@ -392,10 +294,6 @@ class GeminiRunnerEnhanced:
                 "--settings", f".gemini/{self.settings_file}"
             ])
         
-        
-        if self.tool_limiter.max_calls:
-            self.logger.debug(f"tool limit setting: {self.tool_limiter.max_calls}")
-        
         command = " ".join(cmd_parts)
         self._log_process_step("command_build", f"build command: {command}")
         
@@ -471,8 +369,7 @@ class GeminiRunnerEnhanced:
                 current_log["detailed_process"] = {
                     'process_steps': self.process_log,
                     'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0,
-                    'tool_usage_stats': self.tool_limiter.get_usage_stats(),
-                    'cost_summary': self.cost_controller.get_cost_summary()
+                    'stats': self.stream_monitor.get_statistics()
                 }
             
             self.temp_log_file.write_text(json.dumps(current_log, indent=2, ensure_ascii=False))
@@ -532,38 +429,6 @@ class GeminiRunnerEnhanced:
                 pass
         return "".join(self.output_buffer)
     
-    def _analyze_gemini_output(self, output: str) -> None:
-        
-        try:
-            
-            self.cost_controller.add_usage(output_text=output)
-            
-            
-            if "stream-json" in output or "{" in output:
-                lines = output.split("\n")
-                for line in lines:
-                    if line.strip() and line.strip().startswith("{"):
-                        try:
-                            data = json.loads(line.strip())
-                            if (data.get("type") == "assistant" and 
-                                "message" in data and 
-                                "content" in data["message"]):
-                                content = data["message"]["content"]
-                                if isinstance(content, list):
-                                    for item in content:
-                                        if (isinstance(item, dict) and 
-                                            item.get("type") == "tool_use" and 
-                                            "name" in item):
-                                            tool_name = item["name"]
-                                            if not self.tool_limiter.check_and_increment(tool_name):
-                                                self.logger.warning(f"tool {tool_name} limit")
-                        except json.JSONDecodeError:
-                            continue
-            
-            
-        except Exception as e:
-            self.logger.warning(f"fail: {e}")
-    
     def _log_final_stats(self) -> None:
         
         if not self.start_time:
@@ -617,8 +482,7 @@ class GeminiRunnerEnhanced:
         return {
             'process_steps': self.process_log,
             'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0,
-            'tool_usage_stats': self.tool_limiter.get_usage_stats(),
-            'cost_summary': self.cost_controller.get_cost_summary()
+            'stats': self.stream_monitor.get_statistics()
         }
     
     def save_process_log(self, output_file: str) -> None:
