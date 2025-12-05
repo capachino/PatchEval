@@ -18,6 +18,7 @@ import logging
 import argparse
 import os
 import re
+import csv
 from collections import defaultdict
 import json
 import tempfile
@@ -435,6 +436,13 @@ def main():
     }
     with open(f"./evaluation_output/{args.output}/summary.json", 'w') as f:
         json.dump(full_json_summary, f, indent=4)
+        
+    with open(f"./evaluation_output/{args.output}/results.csv", 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["cve", "language", "failure_type", "image_name", "is_strict_success", "is_poc_success", "is_processing_error"])
+        for res in all_results:
+            writer.writerow(res)
+            
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
