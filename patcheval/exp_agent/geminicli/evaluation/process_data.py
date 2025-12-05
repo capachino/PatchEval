@@ -20,6 +20,28 @@ import argparse
 
 # Log
 # - Skip over records without generated patches
+# - Change output dir arg to accept the output root
+# - Skip over records that do not have successful run results
+
+
+def _load_run_results(run_index_path: Path) -> dict[str, bool]:
+    statuses = {}
+    
+    with open(run_index_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+        for line in text.replace("\\n", "\n").split("\n"):
+            if not line:
+                continue
+            record = json.loads(line.strip())
+            problem_id = record.get("problem_id", "")
+            if not problem_id:
+                continue
+            
+            # Do not overwrite a True status with a False one
+            if statuses.get(problem_id) is not True:
+                statuses[problem_id] = record.get("is_success", False)
+
+    return statuses
 
 
 def main():
@@ -28,33 +50,49 @@ def main():
     dataset_path = args.dataset_path
     dataset = utils.load_jsonl_file(dataset_path)
     output_dir = args.output_dir
+    patches_dir = os.path.join(output_dir, "patches")    
     process_data_path = args.process_data_path
-    erro_cve = []
+    failed_cve = []
+    missing_cve = []
+    nopatch_cve = []
     process_data = []
+    
+    run_index_path = os.path.join(output_dir, "run_index.jsonl")
+    run_results = _load_run_results(run_index_path)
+    
     for data in dataset:
         cve_id, image_name = data['cve_id'], data['image_name']
-        patch_path = f"{output_dir}/{cve_id}.patch"
-
-        if not os.path.exists(patch_path) or os.path.isdir(patch_path):
-            
-            erro_cve.append(cve_id)
-            fix_patch = ""
+        patch_path = f"{patches_dir}/{cve_id}.patch"
+        
+        if cve_id not in run_results:
+            missing_cve.append(cve_id)
             continue
-        else:
-            with open(patch_path) as f:
-                fix_patch = f.read()
-        # if cve_id.upper() not in cve2language:
-            # continue
-        process_data.append(
-            {
-                "cve": cve_id.upper(),
-                "language": cve2language[cve_id.upper()],
-                'fix_patch': fix_patch
-            }
-        )
+        
+        if not run_results[cve_id]:
+            failed_cve.append(cve_id)
+            continue
+        
+        if not os.path.exists(patch_path) or os.path.isdir(patch_path):
+            nopatch_cve.append(cve_id)
+            continue
+
+        with open(patch_path) as f:
+            fix_patch = f.read()
+    # if cve_id.upper() not in cve2language:
+        # continue
+            process_data.append(
+                {
+                    "cve": cve_id.upper(),
+                    "language": cve2language[cve_id.upper()],
+                    'fix_patch': fix_patch
+                }
+            )
     Path(process_data_path).parent.mkdir(parents=True, exist_ok=True)
     utils.write_jsonl(process_data, process_data_path)
-    print(erro_cve)
+    print(f"Wrote {len(process_data)} records to {process_data_path}\n")
+    print(f"Missing CVEs: {missing_cve}\n")
+    print(f"Skipped CVEs (failed run): {failed_cve}\n")
+    print(f"Skipped CVEs (no patch): {nopatch_cve}\n")
 
 
 if __name__ == "__main__":
