@@ -331,6 +331,7 @@ class GeminiRunnerEnhanced:
                 "api_provider": api_provider,
                 "duration": 0,
                 "patch_stats": {},
+                "stats": {},
                 "gemini_output": "",
                 "container_logs": "",
                 "detailed_process": None,
@@ -365,11 +366,12 @@ class GeminiRunnerEnhanced:
                 
             current_log["last_updated"] = time.time()
             
+            current_log["stats"] = self.stream_monitor.get_statistics()
+            
             if self.enable_detailed_logging and self.process_log:
                 current_log["detailed_process"] = {
                     'process_steps': self.process_log,
-                    'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0,
-                    'stats': self.stream_monitor.get_statistics()
+                    'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0                    
                 }
             
             self.temp_log_file.write_text(json.dumps(current_log, indent=2, ensure_ascii=False))
@@ -401,6 +403,7 @@ class GeminiRunnerEnhanced:
                 current_log["duration"] = (self.end_time or time.time()) - self.start_time
             current_log["last_updated"] = time.time()
             
+            current_log["stats"] = self.stream_monitor.get_statistics()
             
             final_log_file = self.temp_log_file.parent / f"{current_log['problem_id']}.log"
             if success:
@@ -481,8 +484,7 @@ class GeminiRunnerEnhanced:
     def get_detailed_process_log(self) -> Dict[str, Any]:
         return {
             'process_steps': self.process_log,
-            'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0,
-            'stats': self.stream_monitor.get_statistics()
+            'total_duration': (self.end_time - self.start_time) if (self.start_time and self.end_time) else 0
         }
     
     def save_process_log(self, output_file: str) -> None:
