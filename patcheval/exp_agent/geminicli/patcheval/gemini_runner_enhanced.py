@@ -662,12 +662,11 @@ class GeminiRunnerEnhanced:
             return result
             
         except subprocess.TimeoutExpired as e:
+            self.logger.warning(f"fail: {timeout_seconds}s")
             result = reader.read_with_monitoring(timeout=timeout_seconds)
             raise subprocess.TimeoutExpired(
                 e.cmd, e.timeout, f"timeout fail: {timeout_seconds}s, result: {result}"
             ) from e
-            self.logger.warning(f"fail: {timeout_seconds}s")
-            raise
         except Exception as e:
             self.logger.error(f"fail: {e}")
             raise
