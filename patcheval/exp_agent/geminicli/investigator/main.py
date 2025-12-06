@@ -60,10 +60,11 @@ def main() -> None:
         sys.exit(1)
 
     image_name = docker_metadata.get("image_name")
-    logger.info("Docker Image Name: %s", image_name)
+    if not image_name:
+        logger.error("No Docker image name found with CVE ID: %s", args.cve)
+        sys.exit(1)
 
     workspace_dest =  get_project_root() / "patcheval" / "exp_agent" / "geminicli" / "investigator" / args.cve
-
     try:
         extract_workspace_from_image(image_name, workspace_dest)
     except Exception as e:
