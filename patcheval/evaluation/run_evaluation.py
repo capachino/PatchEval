@@ -306,13 +306,33 @@ def main():
             else:
                 with open(f"{log_dir}/erro_output.log", 'w') as f: f.write(output)
             
-            return (cve, language, validation_type, image_name, is_strict_success, is_poc_success, False)
+            return {
+                "cve": cve,
+                "language": language,
+                "validation_type": validation_type,
+                "image_name": image_name,
+                "input_tokens": patch.get("input_tokens", 0),
+                "output_tokens": patch.get("output_tokens", 0),                                
+                "is_strict_success": is_strict_success,
+                "is_poc_success": is_poc_success,
+                "is_processing_error": False
+            }
         except Exception as e:
             task_logger.error(f"{image_name} RUN ERROR")
             task_logger.error(e)
             with open(f"{log_dir}/erro_output.log", 'w') as f:
                 f.write(str(e))
-            return (cve, language, validation_type, image_name, False, False, True)  
+            return {
+                "cve": cve,
+                "language": language,
+                "validation_type": validation_type,
+                "image_name": image_name,
+                "input_tokens": patch.get("input_tokens", 0),
+                "output_tokens": patch.get("output_tokens", 0),                
+                "is_strict_success": False,
+                "is_poc_success": False,
+                "is_processing_error": True
+            }
         finally:
             buffer_handler.flush()
             buffer_handler.close()
@@ -337,7 +357,12 @@ def main():
     error_images = []
 
     for res in all_results:
-        cve, language, validation_type, image_name, is_strict_success, is_poc_success, is_error = res
+        cve = res['cve']
+        language = res['language']
+        validation_type = res['validation_type']
+        is_strict_success = res['is_strict_success']
+        is_poc_success = res['is_poc_success']
+        is_error = res['is_processing_error']
         
         if is_strict_success:
             strict_summary[language].append(cve)
@@ -351,7 +376,7 @@ def main():
                  fail_summary['all_apply_error_case'].append(cve)
 
         if is_error:
-            error_images.append(image_name)
+            error_images.append(res['image_name'])
 
     def generate_summary_report(title, success_summary, total_cases):
         report_lines = []
@@ -439,9 +464,19 @@ def main():
         
     with open(f"./evaluation_output/{args.output}/results.csv", 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(["cve", "language", "failure_type", "image_name", "is_strict_success", "is_poc_success", "is_processing_error"])
+        writer.writerow(["cve", "language", "validation_result", "image_name", "input_tokens", "output_tokens", "is_strict_success", "is_poc_success", "is_processing_error"])
         for res in all_results:
-            writer.writerow(res)
+            writer.writerow([
+                res.get("cve"),
+                res.get("language"),
+                res.get("validation_type"),
+                res.get("image_name"),
+                res.get("input_tokens"),
+                res.get("output_tokens"),
+                res.get("is_strict_success"),
+                res.get("is_poc_success"),
+                res.get("is_processing_error")
+            ])
             
 
 if __name__ == "__main__":
