@@ -62,8 +62,6 @@ def main():
     
     for data in dataset:
         cve_id, image_name = data['cve_id'], data['image_name']
-        patch_path = f"{patches_dir}/{cve_id}.patch"
-        
         if cve_id not in run_results:
             missing_cve.append(cve_id)
             continue
@@ -71,10 +69,20 @@ def main():
         if not run_results[cve_id]:
             failed_cve.append(cve_id)
             continue
-        
+
+        patch_path = f"{patches_dir}/{cve_id}.patch"        
         if not os.path.exists(patch_path) or os.path.isdir(patch_path):
             nopatch_cve.append(cve_id)
             continue
+
+        stats = {}
+        agent_logs_dir = os.path.join(output_dir, "agent_logs")        
+        agent_log_path = f"{agent_logs_dir}/{cve_id}.log"
+        with open(agent_log_path) as f:
+            agent_log = json.load(f)
+            detailed_process = agent_log.get("detailed_process", None)
+            if detailed_process:
+                stats = detailed_process.get("stats", {})
 
         with open(patch_path) as f:
             fix_patch = f.read()
@@ -84,6 +92,8 @@ def main():
                 {
                     "cve": cve_id.upper(),
                     "language": cve2language[cve_id.upper()],
+                    "input_tokens": stats.get("total_input_tokens", 0),
+                    "output_tokens": stats.get("total_output_tokens", 0),
                     'fix_patch': fix_patch
                 }
             )
