@@ -3,9 +3,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-from docker_utils import extract_workspace_from_image
+from typing import Any, Dict, Optional
 
 
 logger = logging.getLogger(__name__)
@@ -20,21 +18,8 @@ def get_project_root() -> Path:
 
 def find_record_by_cve(cve_id: str) -> Optional[Dict[str, Any]]:
     path = get_project_root() / "patcheval" / "datasets" / "patcheval_dataset.json"
-    with path.open("r") as f:
-        records = json.load(f)
-        return next(
-            (record for record in records if record.get("cve_id") == cve_id), None
-        )
-
-
-def find_docker_metadata_by_cve(cve_id: str) -> Optional[Dict[str, Any]]:
-    path = get_project_root() / "patcheval" / "exp_agent" / "geminicli" / "dataset.jsonl"
-    with path.open("r") as f:
-        for line in f:
-            record = json.loads(line)
-            if record.get("cve_id") == cve_id:
-                return record
-    return None
+    records = json.loads(path.read_text()) # Consistent with rest of script
+    return next((r for r in records if r.get("cve_id") == cve_id), None)
 
 
 def main() -> None:
@@ -45,6 +30,9 @@ def main() -> None:
     parser.add_argument(
         "--cve", type=str, required=True, help="The CVE ID to investigate."
     )
+    parser.add_argument(
+        "--batch_id", type=str, required=True, help="The ID of the batch run e.g. `25pro`."
+    )    
     args = parser.parse_args()
 
     logger.info("Investigating CVE: %s", args.cve)
@@ -53,25 +41,61 @@ def main() -> None:
     if not record:
         logger.error("No record found with CVE ID: %s", args.cve)
         sys.exit(1)
-
-    docker_metadata = find_docker_metadata_by_cve(args.cve)
-    if not docker_metadata:
-        logger.error("No Docker metadata found with CVE ID: %s", args.cve)
-        sys.exit(1)
-
-    image_name = docker_metadata.get("image_name")
-    if not image_name:
-        logger.error("No Docker image name found with CVE ID: %s", args.cve)
-        sys.exit(1)
-
-    workspace_dest =  get_project_root() / "patcheval" / "exp_agent" / "geminicli" / "investigator" / args.cve
-    try:
-        extract_workspace_from_image(image_name, workspace_dest)
-    except Exception as e:
-        logger.error("Failed to extract workspace: %s", e, exc_info=True)
-        sys.exit(1)
         
-    # TODO: run Gemini CLI with a prompt to analyze the extracted workspace.
+    geminicli_eval_path = (
+        get_project_root()
+        / "patcheval"
+        / "exp_agent"
+        / "geminicli"
+    )    
+    eval_output_path = geminicli_eval_path / "evaluation_output"
+    script_path = geminicli_eval_path / "investigator"
+
+    tool_patch_path = (
+        eval_output_path
+        / "results"
+        / args.batch_id
+        / "logs"
+        / args.cve
+        / "fix.patch"
+    )
+    tool_generated_patch = tool_patch_path.read_text()
+
+    poc_test_error_path = (
+        eval_output_path
+        / "results"
+        / args.batch_id
+        / "logs"
+        / args.cve
+        / "erro_output.log"
+    )
+    poc_test_error_log = poc_test_error_path.read_text()
+
+    template_path = (
+        script_path
+        / "explain_vulnerability.md"
+    )
+    template = template_path.read_text()
+        
+    poc_test_path = (
+        script_path
+        / args.cve
+        / "test.patch"
+    )
+    poc_test_patch = poc_test_path.read_text()
+        
+    prompt = template.replace("{{CVE_ID}}", args.cve)
+    prompt = prompt.replace("{{CVE_DESCRIPTION}}", record.get("cve_description", ""))
+    vul_func_str = ""
+    if record.get("vul_func"):
+        vul_func_str = json.dumps(record.get("vul_func"), indent=4)
+    prompt = prompt.replace("{{VULN_FUNC}}", vul_func_str)
+    prompt = prompt.replace("{{VULN_PATCH}}", record.get("vul_patch", ""))
+    prompt = prompt.replace("{{TOOL_GENERATED_PATCH}}", tool_generated_patch)
+    prompt = prompt.replace("{{POC_TEST_PATCH}}", poc_test_patch)
+    prompt = prompt.replace("{{POC_TEST_ERROR_LOG}}", poc_test_error_log)
+
+    print(prompt)
 
 
 if __name__ == "__main__":
