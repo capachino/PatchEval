@@ -31,6 +31,7 @@ from .dataset import load_dataset
 # - Changed default strategy to "default"
 # - Changed save-process-logs and allow-git-diff-fallback default to True
 # - Added a `model` arg to specify the Gemini model to use
+# - Default `outputs-root` for single command changed to "./outputs/single"
 
 
 def get_available_strategies() -> list[str]:
@@ -81,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     # Single command  
     single_parser = subparsers.add_parser("single")
     single_parser.add_argument("--dataset", type=Path, default="./dataset.jsonl")
-    single_parser.add_argument("--outputs-root", type=Path, default="./outputs")
+    single_parser.add_argument("--outputs-root", type=Path, default="./outputs/single")
     single_parser.add_argument("--cve-id", type=str, required=True)
     single_parser.add_argument("--timeout", type=str, default="45m")
     single_parser.add_argument("--keep-container", action="store_true")
