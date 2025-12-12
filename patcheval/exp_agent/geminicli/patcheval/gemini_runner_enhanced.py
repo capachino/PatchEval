@@ -35,18 +35,17 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 # - Remove `CostController` and `ToolUsageLimiter`
 # - Remove `strategy` related code
 # - Removed cost and tool limits
+# - Removed `settings` file related code
 
 
 class GeminiRunnerEnhanced:
     
     def __init__(self, container_id: str, work_dir: str, 
                  enable_detailed_logging: bool = True,
-                 allow_git_diff_fallback: bool = False,
-                 settings_file: Optional[str] = None):
+                 allow_git_diff_fallback: bool = False):
         self.container_id = container_id
         self.work_dir = work_dir
         self.allow_git_diff_fallback = allow_git_diff_fallback
-        self.settings_file = settings_file
         self.logger = logging.getLogger(__name__)
         
         self.stream_monitor = RealTimeStreamMonitor()
@@ -164,23 +163,6 @@ class GeminiRunnerEnhanced:
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
-            if self.settings_file:
-                try:
-                    source_settings_path = Path("config") / self.settings_file
-                    if not source_settings_path.exists():
-                        self.logger.warning(f"file not exist: {source_settings_path}")
-                    else:
-                        with open(source_settings_path, 'r', encoding='utf-8') as f:
-                            custom_settings_content = f.read()
-                        
-                        container_settings_path = f"{self.work_dir}/.gemini/{self.settings_file}"
-                        self._write_file_to_container(container_settings_path, custom_settings_content)
-                        self.logger.info(f" {self.settings_file} -> {container_settings_path}")
-                        self._log_process_step("settings_copy", f"{self.settings_file}")
-                except Exception as e:
-                    self.logger.error(f"copy file error: {e}")
-                    self._log_process_step("settings_copy_error", f"copy file error: {str(e)}")
-            
             self._exec_in_container("chown", f"-R gemini_user:gemini_user {self.work_dir}")
         
             return True
@@ -282,13 +264,7 @@ class GeminiRunnerEnhanced:
             ])
         else:
             cmd_parts.append("--output-format json")  
-        
-        
-        if self.settings_file:
-            cmd_parts.extend([
-                "--settings", f".gemini/{self.settings_file}"
-            ])
-        
+                
         command = " ".join(cmd_parts)
         self._log_process_step("command_build", f"build command: {command}")
         

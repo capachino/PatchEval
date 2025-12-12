@@ -33,6 +33,8 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 # - Removed `port` arg
 # - Respect `success` result from execute_cve_repair
 # - Removed `strategy` related code
+# - Removed cost and tool limits
+# - Removed `settings_file` arg
 
 
 def run_single_cve(record: CVERecord,
@@ -43,7 +45,6 @@ def run_single_cve(record: CVERecord,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None,
                   model: str = "25pro") -> Dict[str, Any]:
     
     if semaphore is None:
@@ -90,7 +91,6 @@ def run_single_cve(record: CVERecord,
             record.work_dir,
             enable_detailed_logging=enable_detailed_logging,
             allow_git_diff_fallback=allow_git_diff_fallback,
-            settings_file=settings_file
         )
         
         if not gemini.setup_environment(record, api_key, model):

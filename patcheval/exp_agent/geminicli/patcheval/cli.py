@@ -30,6 +30,7 @@ from .dataset import load_dataset
 # - Removed `strategy` arg
 # - Remove cost and tool limits
 # - Remove `api-provider`
+# - Remove `settings` arg
 # - Changed save-process-logs and allow-git-diff-fallback default to True
 # - Added a `model` arg to specify the Gemini model to use
 # - Default `outputs-root` for single command changed to "./outputs/single"
@@ -59,7 +60,6 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--enable-detailed-logging", action="store_true", default=True,)
     batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
-    batch_parser.add_argument("--settings", type=str)
     batch_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     
     # Single command  
@@ -75,7 +75,6 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--enable-detailed-logging", action="store_true", default=True)
     single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
-    single_parser.add_argument("--settings", type=str)
     single_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     
     # Cleanup command
@@ -137,7 +136,6 @@ def handle_batch_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None),
             model=args.model
         )
         
@@ -187,7 +185,6 @@ def handle_single_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            settings_file=getattr(args, 'settings', None),
             model=args.model
         )
         
