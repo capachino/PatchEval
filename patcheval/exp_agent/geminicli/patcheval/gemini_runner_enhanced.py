@@ -456,23 +456,12 @@ class GeminiRunnerEnhanced:
             if stats['tool_calls']:
                 tool_summary = ', '.join(f"{tool}:{count}" for tool, count in stats['tool_calls'].items())
                 self.logger.info(f"tool: {tool_summary}")
-            
-            if stats.get('id_format_stats'):
-                format_summary = ', '.join(f"{fmt}:{count}" for fmt, count in stats['id_format_stats'].items())
-            
-            
+                        
             if stats['total_tool_calls'] < 5:  
                 
                 
                 post_analysis = self._perform_post_process_analysis()
-                if post_analysis and post_analysis['detected_tool_calls'] > stats['total_tool_calls']:
-                    
-                    if post_analysis['tool_breakdown']:
-                        post_tool_summary = ', '.join(f"{tool}:{count}" for tool, count in post_analysis['tool_breakdown'].items())
-                    
-                    if post_analysis['id_format_distribution']:
-                        post_format_summary = ', '.join(f"{fmt}:{count}" for fmt, count in post_analysis['id_format_distribution'].items())
-                    
+                if post_analysis and post_analysis['detected_tool_calls'] > stats['total_tool_calls']:                    
                     stats.update({
                         'post_process_analysis': post_analysis,
                         'analysis_note': 'Real-time monitoring may have missed some tool calls, post-process analysis provides more accurate results'
