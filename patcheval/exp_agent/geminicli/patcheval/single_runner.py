@@ -35,6 +35,7 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 # - Removed `strategy` related code
 # - Removed cost and tool limits
 # - Removed `settings_file` arg
+# - Removed readable logs
 
 
 def run_single_cve(record: CVERecord,
@@ -167,22 +168,6 @@ def run_single_cve(record: CVERecord,
         
         import json
         log_file_path.write_text(json.dumps(full_log, indent=2, ensure_ascii=False))
-        
-        try:
-            from .log_parser import StreamJsonLogParser
-            
-            readable_logs_dir = outputs_root / "readable_logs"
-            readable_logs_dir.mkdir(exist_ok=True)
-            
-            parser = StreamJsonLogParser()
-            readable_log_path = readable_logs_dir / f"{problem_id}_readable.md"
-            
-            readable_content = parser.generate_human_readable_log(str(log_file_path), str(readable_log_path))
-            
-           
-            
-        except Exception as log_parse_error:
-            pass
         
         if save_process_logs:
             process_log_path = outputs_root / "process_logs" / f"{problem_id}_process.json"

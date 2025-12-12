@@ -36,6 +36,7 @@ from .stream_monitor import RealTimeStreamMonitor, EnhancedProcessStreamReader
 # - Remove `strategy` related code
 # - Removed cost and tool limits
 # - Removed `settings` file related code
+# - Removed readable logs
 
 
 class GeminiRunnerEnhanced:
@@ -405,40 +406,8 @@ class GeminiRunnerEnhanced:
             
         total_duration = (self.end_time or time.time()) - self.start_time
         
-        
-        real_time_stats = self.stream_monitor.get_statistics()
-        
-        
         self._log_process_step("final_stats", f"time: {total_duration:.2f}s")
-        
-            
-    def _generate_readable_log(self, gemini_output: str) -> None:
-        try:
-            from .log_parser import StreamJsonLogParser
-            
-            temp_log_path = f"/tmp/gemini_stream_{int(time.time())}.json"
-            with open(temp_log_path, 'w', encoding='utf-8') as f:
-                f.write(gemini_output)
-            
-            parser = StreamJsonLogParser()
-            
-            readable_log = parser.generate_human_readable_log(temp_log_path)
-            
-            if hasattr(self, 'cve_id'):
-                readable_log_path = f"./outputs/readable_logs/{self.cve_id}_readable.md"
-                os.makedirs(os.path.dirname(readable_log_path), exist_ok=True)
-                
-                with open(readable_log_path, 'w', encoding='utf-8') as f:
-                    f.write(readable_log)
-                
-            
-            try:
-                os.remove(temp_log_path)
-            except:
-                pass
-                
-        except Exception as e:
-            self.logger.warning(f"fail: {e}")
+
     
     def get_detailed_process_log(self) -> Dict[str, Any]:
         return {

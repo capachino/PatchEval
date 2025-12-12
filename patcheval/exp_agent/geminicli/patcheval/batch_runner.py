@@ -28,28 +28,7 @@ from .single_runner import run_single_cve
 # - Port arg removed
 # - Removed `strategy` related code
 # - Removed cost and tool limits
-
-
-def _auto_generate_readable_log(outputs_root: Path, problem_id: str):
-    try:
-        from .log_parser import StreamJsonLogParser
-        
-        log_file_path = outputs_root / "agent_logs" / f"{problem_id}.log"
-        if not log_file_path.exists():
-            return
-        
-        readable_logs_dir = outputs_root / "readable_logs"
-        readable_logs_dir.mkdir(exist_ok=True)
-        
-        parser = StreamJsonLogParser()
-        readable_log_path = readable_logs_dir / f"{problem_id}_readable.md"
-        
-        parser.generate_human_readable_log(str(log_file_path), str(readable_log_path))
-        
-    except ImportError:
-        pass
-    except Exception:
-        pass
+# - Removed readable logs
 
 
 def _load_completed_ids(run_index_path: Path) -> Set[str]:
@@ -179,12 +158,6 @@ def run_batch_cves(dataset_path: Path,
                     logger.warning(f"    fail: {error}")
                 
                 _update_run_index(run_index_path, record, result)
-                
-                if result["is_success"]:
-                    try:
-                        _auto_generate_readable_log(outputs_root, record.problem_id)
-                    except Exception as log_error:
-                        logger.warning(f"error: {record.problem_id}: {log_error}")
                 
             except Exception as e:
                 failed_count += 1
