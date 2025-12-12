@@ -27,6 +27,8 @@ from collections import defaultdict
 # - Removed `ProcessStreamReader`
 # - Removed cost tracking code
 # - Removed tool use heuristics
+# - Removed ID format tracking
+# - Removed JSON buffering logic
 
 
 class RealTimeStreamMonitor:
@@ -37,8 +39,6 @@ class RealTimeStreamMonitor:
         self.tool_calls = defaultdict(int)
         self.total_calls = 0
         
-        self.id_format_stats = defaultdict(int)
-        
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         
@@ -48,9 +48,6 @@ class RealTimeStreamMonitor:
         
         self._monitor_thread = None
         self._stop_event = threading.Event()
-        
-        self._json_buffer = ""
-        self._in_json_block = False
         
     def add_stop_callback(self, callback: Callable[[str], None]) -> None:
         self.stop_callbacks.append(callback)
@@ -64,50 +61,12 @@ class RealTimeStreamMonitor:
     
     def monitor_process(self, process: subprocess.Popen) -> None:
         self.process = process
-        
-    def _monitor_output_stream(self, process: subprocess.Popen) -> None:
-        try:
-            buffer = ""
-            while process.poll() is None and not self._stop_event.is_set():
-                if process.stdout and process.stdout.readable():
-                    try:
-                        data = process.stdout.read(1024)
-                        if data:
-       
-                            if isinstance(data, bytes):
-                                decoded_data = data.decode('utf-8', errors='ignore')
-                            else:
-                                decoded_data = str(data)
-                            buffer += decoded_data
-                            
-        
-                            while '\n' in buffer:
-                                line, buffer = buffer.split('\n', 1)
-                                if line.strip():
-                                    self._process_output_line(line.strip())
-                                    
-      
-                                    if self.should_stop:
-                                        self._force_stop_process(process)
-                                        return
-                    except Exception as read_error:
-                        pass
-                        
-                time.sleep(0.1)  
-                
-        except Exception as e:
-            self.logger.error(f"{e}")
-        finally:
-            if buffer.strip():
-                self._process_output_line(buffer.strip())
     
     def _process_output_line(self, line: str) -> None:
         try:
             cleaned_line = line.strip()
             if not cleaned_line:
                 return
-            
-            self._process_json_buffer(cleaned_line)
 
             if cleaned_line.startswith('{') and cleaned_line.endswith('}'):
                 try:
@@ -119,42 +78,7 @@ class RealTimeStreamMonitor:
                 
         except Exception as e:
             pass
-    
-    def _process_json_buffer(self, line: str) -> None:
-        try:
-    
-            json_starts = ['{"type":"assistant"', '{"type":"user"', '{"type":"system"']
-            
-            for start_marker in json_starts:
 
-                start_pos = line.find(start_marker)
-                if start_pos != -1:
-    
-                    if self._json_buffer:
-                        self._try_parse_buffered_json()
-                    
-           
-                    potential_json = line[start_pos:]
-                    
-           
-                    if potential_json.count('{') > 0 and potential_json.endswith('}'):
-      
-                        if self._try_parse_direct_json(potential_json):
-                            return
-                    
-
-                    self._json_buffer = potential_json
-                    self._in_json_block = True
-                    return
-            
-
-            if self._in_json_block:
-                self._json_buffer += line
-                self._try_parse_buffered_json()
-                
-        except Exception as e:
-            pass
-    
     def _try_parse_direct_json(self, json_str: str) -> bool:
 
         try:
@@ -164,30 +88,6 @@ class RealTimeStreamMonitor:
             return True
         except json.JSONDecodeError:
             return False
-    
-    def _try_parse_buffered_json(self) -> None:
-
-        try:
-            if not self._json_buffer:
-                return
-            
-
-            data = json.loads(self._json_buffer)
-            self._handle_json_message(data)
-            
-            
-
-            self._json_buffer = ""
-            self._in_json_block = False
-            
-        except json.JSONDecodeError:
-      
-            if len(self._json_buffer) > 50000:  
-                
-                self._json_buffer = ""
-                self._in_json_block = False
-        except Exception as e:
-            pass
 
     
     def _handle_json_message(self, data: Dict[str, Any]) -> None:
@@ -212,29 +112,11 @@ class RealTimeStreamMonitor:
 
     
     def _handle_tool_call(self, tool_name: str, tool_id: str = "") -> None:
-
-        id_format = self._detect_tool_id_format(tool_id)
-        self.id_format_stats[id_format] += 1
-    
         self.tool_calls[tool_name] += 1
         self.total_calls += 1
                 
     
-    def _detect_tool_id_format(self, tool_id: str) -> str:
-
-        if not tool_id:
-            return "unknown"
-        elif tool_id.startswith("toolu_"):
-            return "anthropic_standard"  # toolu_vrtx_01RBkp5F8vJdHc79K72WWxrY
-        elif tool_id.startswith("call_") and "_" in tool_id[5:]:
-            return "proxy_format"  # call_0_0ec5554d-b2d4-47b4-93c4-a3925153e469
-        elif "_" in tool_id and tool_id.split("_")[-1].isdigit():
-            return "simplified"  # TodoWrite_0, Bash_3
-        else:
-            return "custom"
-    
-    def _handle_usage_data(self, usage: Dict[str, Any], model: str) -> None:
- 
+    def _handle_usage_data(self, usage: Dict[str, Any], model: str) -> None: 
         input_tokens = usage.get('input_tokens', 0)
         output_tokens = usage.get('output_tokens', 0)
         
@@ -244,8 +126,6 @@ class RealTimeStreamMonitor:
             
     
     def _force_stop_process(self, process: subprocess.Popen) -> None:
-
-        
         try:
 
             if process.poll() is None:
@@ -266,12 +146,8 @@ class RealTimeStreamMonitor:
         pass
     
     def analyze_completed_output(self, output_text: str) -> Dict[str, Any]:
-
-        
-
         self.tool_calls.clear()
         self.total_calls = 0
-        self.id_format_stats.clear()
         
         lines = output_text.split('\n')
         processed_lines = 0
@@ -287,18 +163,11 @@ class RealTimeStreamMonitor:
             'processed_lines': processed_lines,
             'detected_tool_calls': self.total_calls,
             'tool_breakdown': dict(self.tool_calls),
-            'id_format_distribution': dict(self.id_format_stats),
             'cost_estimation': {
                 'total_input_tokens': self.total_input_tokens,
                 'total_output_tokens': self.total_output_tokens
             }
         }
-        
-        if self.tool_calls:
-            tools_summary = ', '.join(f"{tool}:{count}" for tool, count in self.tool_calls.items())
-        
-        if self.id_format_stats:
-            format_summary = ', '.join(f"{fmt}:{count}" for fmt, count in self.id_format_stats.items())
         
         return analysis_result
     
@@ -307,7 +176,6 @@ class RealTimeStreamMonitor:
         return {
             'tool_calls': dict(self.tool_calls),
             'total_tool_calls': self.total_calls,
-            'id_format_stats': dict(self.id_format_stats),  
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
         }
@@ -316,10 +184,10 @@ class RealTimeStreamMonitor:
 class EnhancedProcessStreamReader:
 
     
-    def __init__(self, process: subprocess.Popen, monitor: RealTimeStreamMonitor, claude_runner=None):
+    def __init__(self, process: subprocess.Popen, monitor: RealTimeStreamMonitor, gemini_runner=None):
         self.process = process
         self.monitor = monitor
-        self.claude_runner = claude_runner  
+        self.gemini_runner = gemini_runner  
         self.logger = logging.getLogger(__name__)
         
     def read_with_monitoring(self, timeout: Optional[int] = None) -> str:
@@ -398,14 +266,14 @@ class EnhancedProcessStreamReader:
                 pass
             
 
-            if output_chunk_buffer and self.claude_runner:
+            if output_chunk_buffer and self.gemini_runner:
                 self._update_real_time_log(output_chunk_buffer)
         
         return ''.join(output_lines)
     
     def _update_real_time_log(self, output_chunks: list) -> None:
 
-        if not self.claude_runner or not output_chunks:
+        if not self.gemini_runner or not output_chunks:
             return
             
         try:
@@ -413,7 +281,7 @@ class EnhancedProcessStreamReader:
             combined_output = ''.join(output_chunks)
             
  
-            self.claude_runner._update_real_time_log(new_output_chunk=combined_output)
+            self.gemini_runner._update_real_time_log(new_output_chunk=combined_output)
             
         except Exception as e:
             pass
