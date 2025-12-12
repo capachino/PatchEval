@@ -23,24 +23,19 @@ from collections import defaultdict
 
 # Log
 # - Updated `_handle_json_message` to parse Gemini output
+# - Removed tool and cost limit enforcement
 
 
 class RealTimeStreamMonitor:
     
-    def __init__(self, 
-                 tool_limits: Optional[Dict[str, int]] = None,
-                 max_total_tool_calls: Optional[int] = None,
-                 max_cost_usd: float = 10.0):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
         
-        self.tool_limits = tool_limits or {}
-        self.max_total_calls = max_total_tool_calls
         self.tool_calls = defaultdict(int)
         self.total_calls = 0
         
         self.id_format_stats = defaultdict(int)
         
-        self.max_cost_usd = max_cost_usd
         self.current_cost_usd = 0.0
         self.total_input_tokens = 0
         self.total_output_tokens = 0
@@ -348,36 +343,10 @@ class RealTimeStreamMonitor:
 
         id_format = self._detect_tool_id_format(tool_id)
         self.id_format_stats[id_format] += 1
-        
-        
-  
-        if self.max_total_calls is not None:
-            if self.total_calls >= self.max_total_calls:
-                reason = f" {self.max_total_calls}"
-                self.logger.warning(reason)
-                self.should_stop = True
-                self._notify_stop(reason)
-                return
-        
- 
-        tool_limit = self.tool_limits.get(tool_name, float('inf'))
-        current_count = self.tool_calls[tool_name]
-        
-        if current_count >= tool_limit:
-            reason = f" {tool_name}  {tool_limit}"
-            self.logger.warning(reason)
-            self.should_stop = True
-            self._notify_stop(reason)
-            return
-        
     
         self.tool_calls[tool_name] += 1
         self.total_calls += 1
-        
-        
-   
-        if self.max_total_calls and self.total_calls >= self.max_total_calls * 0.9:
-            pass
+                
     
     def _detect_tool_id_format(self, tool_id: str) -> str:
 
@@ -409,20 +378,8 @@ class RealTimeStreamMonitor:
             output_cost = (output_tokens / 1_000_000) * pricing['output']
             new_cost = input_cost + output_cost
             
-            self.current_cost_usd += new_cost
+            self.current_cost_usd += new_cost            
             
-            
- 
-            if self.current_cost_usd >= self.max_cost_usd:
-                reason = f" ${self.current_cost_usd:.4f} >= ${self.max_cost_usd:.2f}"
-                self.logger.warning(reason)
-                self.should_stop = True
-                self._notify_stop(reason)
-                return
-            
-
-            if self.current_cost_usd >= self.max_cost_usd * 0.9:
-                remaining = self.max_cost_usd - self.current_cost_usd
     
     def _force_stop_process(self, process: subprocess.Popen) -> None:
 
@@ -489,15 +446,10 @@ class RealTimeStreamMonitor:
         return {
             'tool_calls': dict(self.tool_calls),
             'total_tool_calls': self.total_calls,
-            'max_total_calls': self.max_total_calls,
-            'tool_limits': self.tool_limits,
             'id_format_stats': dict(self.id_format_stats),  
             'current_cost_usd': self.current_cost_usd,
-            'max_cost_usd': self.max_cost_usd,
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
-            'cost_utilization': (self.current_cost_usd / self.max_cost_usd) * 100 if self.max_cost_usd > 0 else 0,
-            'tool_utilization': (self.total_calls / self.max_total_calls) * 100 if self.max_total_calls else 0
         }
 
 

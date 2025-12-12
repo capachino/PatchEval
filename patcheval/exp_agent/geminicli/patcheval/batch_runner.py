@@ -27,6 +27,7 @@ from .single_runner import run_single_cve
 # - Removed `claude_timeout` related code
 # - Port arg removed
 # - Removed `strategy` related code
+# - Removed cost and tool limits
 
 
 def _auto_generate_readable_log(outputs_root: Path, problem_id: str):
@@ -99,9 +100,6 @@ def run_batch_cves(dataset_path: Path,
                   include_ids: Optional[Set[str]] = None,
                   exclude_ids: Optional[Set[str]] = None,
                   keep_containers: bool = False,
-                  tool_limits: Optional[Dict[str, int]] = None,
-                  max_total_tool_calls: Optional[int] = None,
-                  max_cost_usd: float = 10.0,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
@@ -146,9 +144,6 @@ def run_batch_cves(dataset_path: Path,
                 timeout_seconds=timeout_seconds,
                 api_provider=api_provider,
                 keep_container=keep_containers,
-                tool_limits=tool_limits,
-                max_total_tool_calls=max_total_tool_calls,
-                max_cost_usd=max_cost_usd,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
                 allow_git_diff_fallback=allow_git_diff_fallback,

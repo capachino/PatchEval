@@ -29,6 +29,7 @@ from .dataset import load_dataset
 # - `api-provider` choices updated to only Gemini for now
 # - Removed `port` arg
 # - Removed `strategy` arg
+# - Remove cost and tool limits
 # - Changed save-process-logs and allow-git-diff-fallback default to True
 # - Added a `model` arg to specify the Gemini model to use
 # - Default `outputs-root` for single command changed to "./outputs/single"
@@ -56,8 +57,6 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     
 
-    batch_parser.add_argument("--tool-limits", type=str, help="(tool1:limit1,tool2:limit2 or total:500)")
-    batch_parser.add_argument("--max-cost-usd", type=float, default=10.0)
     batch_parser.add_argument("--enable-detailed-logging", action="store_true", default=True,)
     batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
@@ -75,8 +74,6 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--interactive", action="store_true")
 
 
-    single_parser.add_argument("--tool-limits", type=str)
-    single_parser.add_argument("--max-cost-usd", type=float, default=10.0)
     single_parser.add_argument("--enable-detailed-logging", action="store_true", default=True)
     single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
@@ -90,26 +87,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def parse_tool_limits(tool_limits_str: str) -> tuple:
-    if not tool_limits_str:
-        return {}, None
-    
-    if tool_limits_str.strip().lower().startswith('total:'):
-        try:
-            total_limit = int(tool_limits_str.split(':', 1)[1].strip())
-            return {}, total_limit
-        except ValueError as e:
-            raise ValueError(f"Total tool limit format error: {e}")
-    
-    limits = {}
-    try:
-        for pair in tool_limits_str.split(","):
-            tool, limit = pair.strip().split(":")
-            limits[tool.strip()] = int(limit.strip())
-    except ValueError as e:
-        raise ValueError(f"Tool limits format error: {e}")
-    
-    return limits, None
 def parse_timeout(timeout_str: str) -> int:
     """Parse timeout string like '45m', '2h' to seconds."""
     if timeout_str.endswith('s'):
@@ -154,8 +131,6 @@ def handle_batch_command(args):
         return 1
     
     try:
-        tool_limits_dict, max_total_calls = parse_tool_limits(getattr(args, 'tool_limits', None))
-        
         summary = run_batch_cves(
             dataset_path=args.dataset,
             outputs_root=args.outputs_root,
@@ -165,9 +140,6 @@ def handle_batch_command(args):
             resume=args.resume,
             limit=args.limit,
             keep_containers=args.keep_containers,
-            tool_limits=tool_limits_dict,
-            max_total_tool_calls=max_total_calls,
-            max_cost_usd=getattr(args, 'max_cost_usd', 10.0),
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
@@ -213,17 +185,12 @@ def handle_single_command(args):
         return 1
     
     try:
-        tool_limits_dict, max_total_calls = parse_tool_limits(getattr(args, 'tool_limits', None))
-        
         result = run_single_cve(
             record=record,
             outputs_root=args.outputs_root,
             timeout_seconds=timeout_seconds,
             api_provider=args.api_provider,
             keep_container=args.keep_container,
-            tool_limits=tool_limits_dict,
-            max_total_tool_calls=max_total_calls,
-            max_cost_usd=getattr(args, 'max_cost_usd', 10.0),
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),

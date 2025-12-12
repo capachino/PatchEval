@@ -34,14 +34,12 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 # - Remove `_check_repair_success` as it confuses error reporting
 # - Remove `CostController` and `ToolUsageLimiter`
 # - Remove `strategy` related code
+# - Removed cost and tool limits
 
 
 class GeminiRunnerEnhanced:
     
     def __init__(self, container_id: str, work_dir: str, 
-                 tool_limits: Optional[Dict[str, int]] = None,
-                 max_total_tool_calls: Optional[int] = None,
-                 max_cost_usd: float = 10.0,
                  enable_detailed_logging: bool = True,
                  allow_git_diff_fallback: bool = False,
                  settings_file: Optional[str] = None):
@@ -51,11 +49,7 @@ class GeminiRunnerEnhanced:
         self.settings_file = settings_file
         self.logger = logging.getLogger(__name__)
         
-        self.stream_monitor = RealTimeStreamMonitor(
-            tool_limits=tool_limits,
-            max_total_tool_calls=max_total_tool_calls,
-            max_cost_usd=max_cost_usd
-        )
+        self.stream_monitor = RealTimeStreamMonitor()
 
         self.enable_detailed_logging = enable_detailed_logging
         
@@ -441,13 +435,6 @@ class GeminiRunnerEnhanced:
         
         
         self._log_process_step("final_stats", f"time: {total_duration:.2f}s")
-        
-        
-        if real_time_stats['tool_calls']:
-            per_tool_str = ', '.join(f"{tool}:{count}" for tool, count in real_time_stats['tool_calls'].items())
-        
-        if real_time_stats.get('max_total_calls'):
-            remaining = real_time_stats['max_total_calls'] - real_time_stats['total_tool_calls']
         
             
     def _generate_readable_log(self, gemini_output: str) -> None:
