@@ -19,9 +19,9 @@ and integrate with cline-cli container routing.
 import docker
 import logging
 import os
+from pathlib import Path
 import subprocess
 import time
-from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 import threading
 
@@ -33,13 +33,16 @@ MAX_RETRIES = 3
 
 def run_work_container_no_mount(image_name: str,
                               problem_id: str,
-                              semaphore: Any) -> str:
+                              semaphore: Any,
+                              gemini_extension_path: Optional[str] = None
+                              ) -> str:
     """Start work container without any volume mounting.
     
     Args:
         image_name: Docker image name
         problem_id: Problem identifier for naming
         semaphore: Concurrency control semaphore
+        gemini_extension_path: Optional local path to a gemini extension to mount.
         
     Returns:
         Container ID of work container
@@ -71,6 +74,27 @@ def run_work_container_no_mount(image_name: str,
         value = os.getenv(key)
         if value:
             api_keys[key] = value
+
+    mount_volumes = {
+        # TODO: what is this? can it be removed?
+        "claude_tgz": {
+            "bind": "/workspace/claude_tgz",
+            "mode": "rw"
+        }
+    }
+    if gemini_extension_path:
+        host_path = os.path.expanduser(gemini_extension_path)
+        if not os.path.exists(host_path):
+            raise FileNotFoundError(
+                f"Gemini extension path not found: {host_path}")
+        extension_name = os.path.basename(host_path)
+        container_path = f"/home/gemini_user/.gemini/extensions/{extension_name}"
+        logging.info(f"Mounting Gemini extension: {host_path} -> {container_path}")
+        mount_volumes[host_path] = {
+            "bind": container_path,
+            "mode": "ro"
+        }
+
     with semaphore:
         logging.info(f"Starting container-native work container: {container_name}")
         try:
@@ -84,13 +108,7 @@ def run_work_container_no_mount(image_name: str,
                 mem_limit="4g",
                 cpu_quota=400000,  # 4 CPU cores
                 extra_hosts={"host.docker.internal":"172.17.0.1"},
-                volumes={
-                    # TODO: what is this? can it be removed?
-                    "claude_tgz": {
-                        "bind": "/workspace/claude_tgz",
-                        "mode": "rw"
-                    }
-                }
+                volumes=mount_volumes
             )
             
             # Wait for container to stabilize

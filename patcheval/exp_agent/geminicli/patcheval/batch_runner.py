@@ -81,7 +81,9 @@ def run_batch_cves(dataset_path: Path,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  model: str = "25pro") -> Dict[str, Any]:
+                  model: str = "25pro",
+                  gemini_extension_path: Optional[str] = None
+                  ) -> Dict[str, Any]:
     
     start_time = time.time()
     logger = logging.getLogger(__name__)
@@ -118,12 +120,12 @@ def run_batch_cves(dataset_path: Path,
                 record=record,
                 outputs_root=outputs_root,
                 semaphore=semaphore,
-                timeout_seconds=timeout_seconds,
                 keep_container=keep_containers,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
                 allow_git_diff_fallback=allow_git_diff_fallback,
-                model=model
+                model=model,
+                gemini_extension_path=gemini_extension_path
             ): record for record in records
         }
         

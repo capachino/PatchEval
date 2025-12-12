@@ -61,6 +61,8 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     batch_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
+    batch_parser.add_argument("--gemini-extension-path", type=str,
+                              help="Local path to a gemini extension to mount.")
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -76,6 +78,8 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
     single_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
+    single_parser.add_argument("--gemini-extension-path", type=str,
+                               help="Local path to a gemini extension to mount.")
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -136,7 +140,8 @@ def handle_batch_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            model=args.model
+            model=args.model,
+            gemini_extension_path=getattr(args, 'gemini_extension_path', None)
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -182,7 +187,8 @@ def handle_single_command(args):
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
-            model=args.model
+            model=args.model,
+            gemini_extension_path=getattr(args, 'gemini_extension_path', None)
         )
         
         if result["is_success"]:

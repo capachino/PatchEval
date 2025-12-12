@@ -46,7 +46,9 @@ def run_single_cve(record: CVERecord,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  model: str = "25pro") -> Dict[str, Any]:
+                  model: str = "25pro",
+                  gemini_extension_path: Optional[str] = None
+                  ) -> Dict[str, Any]:
     
     if semaphore is None:
         semaphore = threading.Semaphore(1)
@@ -82,7 +84,8 @@ def run_single_cve(record: CVERecord,
         
         result["stage"] = "work_container"
         container_id = run_work_container_no_mount(
-            record.image_name, problem_id, semaphore)
+            record.image_name, problem_id, semaphore,
+            gemini_extension_path=gemini_extension_path)
         result["container_id"] = container_id
         
         
@@ -90,7 +93,7 @@ def run_single_cve(record: CVERecord,
             container_id, 
             record.work_dir,
             enable_detailed_logging=enable_detailed_logging,
-            allow_git_diff_fallback=allow_git_diff_fallback,
+            allow_git_diff_fallback=allow_git_diff_fallback
         )
         
         if not gemini.setup_environment(record, api_key, model):
