@@ -145,7 +145,6 @@ def run_batch_cves(dataset_path: Path,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
                 allow_git_diff_fallback=allow_git_diff_fallback,
-                settings_file=settings_file,
                 model=model
             ): record for record in records
         }
