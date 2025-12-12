@@ -130,16 +130,11 @@ echo "🎉 Claude Code environment setup complete!"
 """
         return script_content
     
-    def generate_cve_fix_command(self, record: CVERecord, 
-                                strategy: str = "iterative") -> str:
+    def generate_cve_fix_command(self, record: CVERecord) -> str:
         """Generate CVE fix command file"""
         # Gemini uses .toml files for command templates
-        template_file = f"{strategy}.toml"
-        template_path = self.templates_dir / template_file
-        
-        if not template_path.exists():
-            return self._generate_default_command(record, strategy)
-            
+        template_file = f"default.toml"
+        template_path = self.templates_dir / template_file        
         content = template_path.read_text(encoding='utf-8')
         
         replacements = {
@@ -152,132 +147,7 @@ echo "🎉 Claude Code environment setup complete!"
         for placeholder, value in replacements.items():
             content = content.replace(placeholder, value)
             
-        return content
-    
-    def _generate_default_command(self, record: CVERecord, strategy: str) -> str:
-        if strategy == "iterative":
-            return f"""---
-allowed-tools: 
-  - "Bash(*)"
-  - "text_editor(*)" 
-  - "Read(*)"
-  - "Grep(*)"
-  - "Web Fetch(*)"
-  - "Todo(*)"
-  - "Memory(*)"
-description: "CVE Fix Task - Iterative Repair {record.cve_id}"
-auto-run: true
----
-
-You are a Claude Code CVE fix expert. Please execute the following automated CVE fix process in the container environment:
-
-## Current Environment Info
-- CVE ID: {record.cve_id}
-- Work Directory: {record.work_dir}
-- Repository Name: {Path(record.work_dir).name}
-
-## CVE Vulnerability Description
-{record.problem_statement}
-
-## Repair Process (up to 5 iterations)
-
-### Initialization Stage
-1. Check current environment and CVE repository structure
-2. Analyze the specific location and cause of the vulnerability
-3. Develop a repair strategy
-
-### Repair Loop
-For each repair iteration:
-
-#### Stage 1: In-depth Vulnerability Analysis
-- Carefully read relevant source code files
-- Understand the root cause and attack vector
-- Identify specific files and functions that need modification
-
-#### Stage 2: Generate and Apply Fix
-- Write fix code based on analysis results
-- Apply fix to relevant files
-- Ensure fix does not affect normal functionality
-
-#### Stage 3: Verify Repair Effect
-```bash
-# Check changes after fix
-git diff --stat
-git diff
-```
-
-#### Stage 4: Generate Final Patch
-If repair is complete:
-```bash
-echo "=== CVE Repair Completed ===" 
-git diff > /workspace/final-cve-fix.patch
-cat /workspace/final-cve-fix.patch
-echo "Successfully generated patch for {record.cve_id}"
-```
-
-If more repair is needed:
-- Analyze shortcomings of current fix
-- Adjust repair strategy
-- Go to next iteration
-
-## Completion Criteria
-- Successfully generate `/workspace/final-cve-fix.patch` file
-- Patch contains effective fix for CVE vulnerability
-- Fix does not break normal functionality of the code
-
-Start the first repair analysis iteration now.
-"""
-        else:  # smart strategy
-            return f"""---
-allowed-tools: 
-  - "Bash(*)"
-  - "text_editor(*)" 
-  - "Read(*)"
-  - "Grep(*)"
-  - "Web Fetch(*)"
-  - "Todo(*)"
-  - "Memory(*)"
-description: "CVE Fix Task - Smart Repair {record.cve_id}"
-auto-run: true
----
-
-You are a Claude Code CVE fix expert. Please use the smart repair strategy to address the following CVE vulnerability:
-
-## Task Info
-- CVE ID: {record.cve_id}
-- Work Directory: {record.work_dir}
-- Repository: {Path(record.work_dir).name}
-
-## Vulnerability Description
-{record.problem_statement}
-
-## Smart Repair Strategy
-1. **Quick Location**: Use code search to quickly locate vulnerability-related files
-2. **Pattern Recognition**: Identify common vulnerability patterns (buffer overflow, injection, authentication bypass, etc.)
-3. **Accurate Fix**: Apply best-practice fix based on vulnerability type
-4. **One-Time Success**: Aim to generate an effective fix patch in a single attempt
-
-## Execution Steps
-
-### 1. Quick Scan and Location
-- Analyze CVE description, extract key info
-- Search possible vulnerability files and functions
-- Quickly determine repair scope
-
-### 2. Apply Smart Repair
-- Choose fix template based on vulnerability type
-- Precisely modify target code
-- Ensure fix completeness and security
-
-### 3. Generate Fix Patch
-```bash
-
-git diff > /workspace/final-cve-fix.patch
-cat /workspace/final-cve-fix.patch
-echo "Smart repair completed for {record.cve_id}"
-```
-
-"""
+        return content    
     
     @staticmethod
     def generate_expect_script(timeout: int = 1800) -> str:

@@ -26,7 +26,7 @@ from .single_runner import run_single_cve
 # Log
 # - Removed `claude_timeout` related code
 # - Port arg removed
-# - Changed default strategy to "default"
+# - Removed `strategy` related code
 
 
 def _auto_generate_readable_log(outputs_root: Path, problem_id: str):
@@ -93,7 +93,6 @@ def run_batch_cves(dataset_path: Path,
                   outputs_root: Path,
                   max_workers: int = 1,
                   timeout_seconds: int = 2700,
-                  strategy: str = "default",
                   api_provider: str = "gemini",
                   resume: bool = False,
                   limit: Optional[int] = None,
@@ -145,7 +144,6 @@ def run_batch_cves(dataset_path: Path,
                 outputs_root=outputs_root,
                 semaphore=semaphore,
                 timeout_seconds=timeout_seconds,
-                strategy=strategy,
                 api_provider=api_provider,
                 keep_container=keep_containers,
                 tool_limits=tool_limits,
@@ -221,7 +219,6 @@ def run_batch_cves(dataset_path: Path,
         "success_rate": success_rate,
         "total_duration": total_duration,
         "average_duration": total_duration / max(len(records), 1),
-        "strategy": strategy,
         "api_provider": api_provider,
         "max_workers": max_workers,
         "timeout_seconds": timeout_seconds,
@@ -277,7 +274,6 @@ def _generate_detailed_report(outputs_root: Path, results: list, summary: Dict[s
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write("# Gemini CVE\\n\\n")
             
-            f.write(f"- **strategy**: {summary['strategy']}\\n")
             f.write(f"- **API**: {summary['api_provider']}\\n")
             f.write(f"- **total_processed**: {summary['total_processed']}\\n")
             f.write(f"- **successful**: {summary['successful']}\\n")

@@ -32,13 +32,13 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 # - Updated `api_provider` handling to include only Gemini for now
 # - Removed `port` arg
 # - Respect `success` result from execute_cve_repair
+# - Removed `strategy` related code
 
 
 def run_single_cve(record: CVERecord,
                   outputs_root: Path,
                   semaphore: Optional[threading.Semaphore] = None,
                   timeout_seconds: int = 2700,
-                  strategy: str = "iterative",
                   api_provider: str = "gemini",
                   keep_container: bool = False,
                   tool_limits: Optional[Dict[str, int]] = None,
@@ -67,7 +67,6 @@ def run_single_cve(record: CVERecord,
         "patch_stats": {},
         "error_message": "",
         "stage": "initialization",
-        "strategy": strategy,
         "api_provider": api_provider
     }
     
@@ -105,14 +104,13 @@ def run_single_cve(record: CVERecord,
             settings_file=settings_file
         )
         
-        if not gemini.setup_environment(record, strategy, api_key, api_provider, model):
+        if not gemini.setup_environment(record, api_key, api_provider, model):
             pass
         
         result["stage"] = "gemini_execution"
         
         gemini_start = time.time()
-        success, output_log, patch_content = gemini.execute_cve_repair(
-            strategy)
+        success, output_log, patch_content = gemini.execute_cve_repair()
         
         result["is_success"] = success
         
@@ -169,7 +167,6 @@ def run_single_cve(record: CVERecord,
         full_log = {
             "problem_id": problem_id,
             "cve_id": record.cve_id,
-            "strategy": strategy,
             "api_provider": api_provider,
             "duration": gemini_duration,
             "patch_stats": patch_stats,
@@ -234,7 +231,6 @@ def run_single_cve(record: CVERecord,
                 failed_log = {
                     "problem_id": problem_id,
                     "cve_id": record.cve_id,
-                    "strategy": strategy,
                     "api_provider": api_provider,
                     "stage": result["stage"],
                     "error": str(e),

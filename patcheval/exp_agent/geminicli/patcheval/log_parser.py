@@ -88,7 +88,6 @@ class StreamJsonLogParser:
         
         base_info = {
             'cve_id': agent_log.get('cve_id', 'unknown'),
-            'strategy': agent_log.get('strategy', 'unknown'),
             'duration': agent_log.get('duration', 0),
             'patch_stats': agent_log.get('patch_stats', {}),
             'api_provider': agent_log.get('api_provider', 'unknown')
@@ -105,7 +104,6 @@ class StreamJsonLogParser:
     def _generate_agent_summary(self, events: List[Dict], base_info: Dict) -> Dict[str, Any]:
         summary = {
             "cve_id": base_info.get('cve_id'),
-            "strategy": base_info.get('strategy'),
             "duration": base_info.get('duration'),
             "patch_stats": base_info.get('patch_stats'),
             "tool_usage": {},
@@ -249,7 +247,6 @@ class StreamJsonLogParser:
         if is_agent_format:
             base_info = data.get("base_info", {})
             report_lines.append(f"🎯 CVE ID: {base_info.get('cve_id', 'unknown')}")
-            report_lines.append(f"🔧 Fix Strategy: {base_info.get('strategy', 'unknown')}")
             report_lines.append(f"⏱️ Duration: {base_info.get('duration', 0):.1f} seconds")
             
             patch_stats = base_info.get('patch_stats', {})

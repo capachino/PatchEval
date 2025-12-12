@@ -33,6 +33,7 @@ from .stream_monitor import RealTimeStreamMonitor, ProcessStreamReader, Enhanced
 # - Include Gemini output in timeout exception message
 # - Remove `_check_repair_success` as it confuses error reporting
 # - Remove `CostController` and `ToolUsageLimiter`
+# - Remove `strategy` related code
 
 
 class GeminiRunnerEnhanced:
@@ -68,7 +69,7 @@ class GeminiRunnerEnhanced:
         self.output_buffer = []
         self.temp_log_file = None
         self.cve_id = None
-    def setup_environment(self, record: CVERecord, strategy: str, 
+    def setup_environment(self, record: CVERecord,
                          api_key: str, api_provider: str, model: str) -> bool:
         try:
             self.cve_id = record.cve_id  
@@ -158,12 +159,12 @@ class GeminiRunnerEnhanced:
             
             templates_dir = Path("templates")
             script_gen = ScriptGenerator(templates_dir)
-            fix_command = script_gen.generate_cve_fix_command(record, strategy)
-            command_file = f"{self.work_dir}/.gemini/commands/{strategy}.toml"
+            fix_command = script_gen.generate_cve_fix_command(record)
+            command_file = f"{self.work_dir}/.gemini/commands/default.toml"
             
             self._write_file_to_container(command_file, fix_command)
             
-            self._log_process_step("command_generation", f"generate file: {strategy}.toml")
+            self._log_process_step("command_generation", f"generate file: default.toml")
             
             settings_content = ScriptGenerator.generate_settings_file(model)
             settings_file = f"{self.work_dir}/.gemini/settings.json"
@@ -194,13 +195,13 @@ class GeminiRunnerEnhanced:
             self.logger.error(f"setup error: {e}")
             return False
     
-    def execute_cve_repair(self, strategy: str = "iterative", 
+    def execute_cve_repair(self,
                           timeout: int = 1800) -> Tuple[bool, str, str]:
         try:
             self.start_time = time.time()
             
             
-            cmd = self._build_gemini_command(strategy)
+            cmd = self._build_gemini_command()
             
             
             start_time = time.time()
@@ -271,8 +272,8 @@ class GeminiRunnerEnhanced:
             
             return False, str(e), ""
     
-    def _build_gemini_command(self, strategy: str) -> str:
-        command_name = strategy  
+    def _build_gemini_command(self) -> str:
+        command_name = "default"
         
         cmd_parts = [
             f"gemini --prompt /{command_name}",
@@ -316,7 +317,7 @@ class GeminiRunnerEnhanced:
             else:
                 self.logger.info(f"[{step_type.upper()}] {message}")
     
-    def _init_real_time_log(self, record: CVERecord, strategy: str, api_provider: str) -> None:
+    def _init_real_time_log(self, record: CVERecord, api_provider: str) -> None:
         try:
             outputs_root = Path("./outputs")
             outputs_root.mkdir(parents=True, exist_ok=True)
@@ -327,7 +328,6 @@ class GeminiRunnerEnhanced:
             initial_log = {
                 "problem_id": record.problem_id,
                 "cve_id": record.cve_id,
-                "strategy": strategy,
                 "api_provider": api_provider,
                 "duration": 0,
                 "patch_stats": {},
