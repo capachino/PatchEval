@@ -84,8 +84,7 @@ def run_single_cve(record: CVERecord,
         
         result["stage"] = "work_container"
         container_id = run_work_container_no_mount(
-            record.image_name, problem_id, semaphore,
-            gemini_extension_path=gemini_extension_path)
+            record.image_name, problem_id, semaphore)
         result["container_id"] = container_id
         
         
@@ -96,7 +95,7 @@ def run_single_cve(record: CVERecord,
             allow_git_diff_fallback=allow_git_diff_fallback
         )
         
-        if not gemini.setup_environment(record, api_key, model):
+        if not gemini.setup_environment(record, api_key, model, gemini_extension_path):
             pass
         
         result["stage"] = "gemini_execution"

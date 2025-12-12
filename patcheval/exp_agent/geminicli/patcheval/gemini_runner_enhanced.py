@@ -62,7 +62,8 @@ class GeminiRunnerEnhanced:
         self.temp_log_file = None
         self.cve_id = None
     def setup_environment(self, record: CVERecord,
-                         api_key: str, model: str) -> bool:
+                         api_key: str, model: str,
+                         gemini_extension_path: Optional[str] = None) -> bool:
         try:
             self.cve_id = record.cve_id  
             
@@ -96,6 +97,7 @@ class GeminiRunnerEnhanced:
             except Exception as e:
                 self.logger.warning(f"Gemini install error: {e}")
                 self._log_process_step("gemini_install_error", f"Gemini install error: {e}")
+
             ignore_content = f'echo -e "\n\n*.png\n*.jpg\n*.jpeg\n*.gif\n*.bmp\n*.tiff\n*.webp\n*.mp3\n*.mp4\n*.avi\n*.mov\n*.flv\n*.wmv\n*.pdf\n*.psd\n*.ai\n\n\n*.zip\n*.tar\n*.tar.gz\n*.tar.bz2\n*.7z\n*.rar\n*.gz\n*.bz2\n\n\n*.exe\n*.dll\n*.so\n*.dylib\n*.bin\n*.out\n\n*.db\n*.sqlite\n*.sqlite3\n\n/build/\n/dist/\n/bin/\n/out/\n\n\n.DS_Store\nThumbs.db\n\n# Go\nmyapp\nvendor/\n*.out\n*.test\ncoverage.out\nbuild/\ndist/\n\n# JavaScript/Node.js\nnode_modules/\ndist/\nbuild/\nout/\ndist-ssr/\n*.bundle.js\n*.bundle.js.map\n*.chunk.js\n*.chunk.js.map\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\n.pnpm-debug.log*\n.env.local\n.env.development.local\n.env.test.local\n.env.production.local\n.node-gyp/\n*.node\n\n# Python\n__pycache__/\n*.py[cod]\n*$py.class\nvenv/\nenv/\nENV/\n*.venv\n*.egg-info/\n.installed.cfg\n*.egg\ndist/\nbuild/\nwheelhouse/\n*.so\n*.pyd\n*.dll\n.coverage\nhtmlcov/\n.pytest_cache/\n\n*.blk\n*.idx\n*.jar\n*.md\n*package-lock.json\n\n.gemini/\n\n\n" >> {self.work_dir}/.gitignore'.replace('\n', '\\n')
             self._exec_in_container('find /workspace/ -maxdepth 1 -type f -name "*.patch" -exec rm -v {} +')
             self._exec_in_container("bash", f"-c '{ignore_content}'")
@@ -163,6 +165,34 @@ class GeminiRunnerEnhanced:
             self._write_file_to_container(settings_file, settings_content)
             
             self._exec_in_container("chown", f"-R gemini_user:gemini_user {self.work_dir}")
+
+            if gemini_extension_path:
+                host_path = os.path.expanduser(gemini_extension_path)
+                if os.path.exists(host_path):
+                    extension_name = os.path.basename(host_path)
+                    container_dest_parent = "/home/gemini_user/.gemini/extensions"
+                    
+                    self._log_process_step(
+                        "copy_extension",
+                        f"Copying Gemini extension from {host_path} to {container_dest_parent}"
+                    )
+                    
+                    self._exec_in_container("mkdir", f"-p {container_dest_parent}")
+
+                    copy_cmd = f"docker cp '{host_path}' '{self.container_id}:{container_dest_parent}/'"
+                    proc = subprocess.run(copy_cmd, shell=True, capture_output=True, text=True)
+                    if proc.returncode != 0:
+                        raise RuntimeError(f"Failed to copy gemini extension: {proc.stderr}")
+                    
+                    copied_path = f"{container_dest_parent}/{extension_name}"
+                    self._exec_in_container("chown", f"-R gemini_user:gemini_user /home/gemini_user/.gemini")
+                    
+                    self._log_process_step("copy_extension_success", f"Extension copied to {copied_path}")
+
+                else:
+                    self.logger.warning(
+                        f"Gemini extension path not found, skipping copy: {host_path}"
+                    )            
         
             return True
             
