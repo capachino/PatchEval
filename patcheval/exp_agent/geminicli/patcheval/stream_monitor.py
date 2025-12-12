@@ -26,6 +26,7 @@ from collections import defaultdict
 # - Removed tool and cost limit enforcement
 # - Removed `ProcessStreamReader`
 # - Removed cost tracking code
+# - Removed tool use heuristics
 
 
 class RealTimeStreamMonitor:
@@ -115,11 +116,6 @@ class RealTimeStreamMonitor:
                     return
                 except json.JSONDecodeError:
                     pass
-            
-            self._detect_tool_calls_in_line(cleaned_line)
-            
-            if any(marker in cleaned_line for marker in ['"type":"assistant"', '"tool_use"', '"name"']):
-                self._extract_and_handle_embedded_json(cleaned_line)
                 
         except Exception as e:
             pass
@@ -192,109 +188,7 @@ class RealTimeStreamMonitor:
                 self._in_json_block = False
         except Exception as e:
             pass
-    
-    def _detect_tool_calls_in_line(self, line: str) -> None:
 
-        import re
-        
-        try:
-
-            tool_use_pattern = r'"type"\s*:\s*"tool_use"[^}]*"id"\s*:\s*"([^"]+)"[^}]*"name"\s*:\s*"([^"]+)"'
-            matches = re.findall(tool_use_pattern, line)
-            for tool_id, tool_name in matches:
-                
-                self._handle_tool_call(tool_name, tool_id)
-                return  
-            
-
-            call_pattern = r'"id"\s*:\s*"(call_\d+_[a-f0-9\-]+)"\s*,\s*"name"\s*:\s*"([^"]+)"'
-            matches = re.findall(call_pattern, line)
-            for tool_id, tool_name in matches:
-                
-                self._handle_tool_call(tool_name, tool_id)
-                
-        except Exception as e:
-            pass
-    
-    def _extract_tool_use_block(self, line: str) -> None:
-        
-        import re
-        
-        try:
-
-            tool_use_pattern = r'\{[^{}]*"type"\s*:\s*"tool_use"[^{}]*\}'
-            matches = re.findall(tool_use_pattern, line)
-            
-            for match in matches:
-                try:
-                    tool_data = json.loads(match)
-                    tool_name = tool_data.get('name', '')
-                    tool_id = tool_data.get('id', '')
-                    
-                    if tool_name:
-                        
-                        self._handle_tool_call(tool_name, tool_id)
-                        
-                except json.JSONDecodeError:
-                    continue
-                    
-        except Exception as e:
-            pass
-    
-    def _extract_and_handle_embedded_json(self, line: str) -> None:
-
-        try:
-
-            json_start_patterns = [
-                '{"type":"assistant"',
-                '{"type":"system"',
-                '{"type":"user"'
-            ]
-            
-            for start_pattern in json_start_patterns:
-                start_idx = line.find(start_pattern)
-                if start_idx == -1:
-                    continue
-                    
-
-                remaining = line[start_idx:]
-
-                brace_count = 0
-                json_end = -1
-                in_string = False
-                escape_next = False
-                
-                for i, char in enumerate(remaining):
-                    if escape_next:
-                        escape_next = False
-                        continue
-                        
-                    if char == '\\' and in_string:
-                        escape_next = True
-                        continue
-                        
-                    if char == '"' and not escape_next:
-                        in_string = not in_string
-                    elif not in_string:
-                        if char == '{':
-                            brace_count += 1
-                        elif char == '}':
-                            brace_count -= 1
-                            if brace_count == 0:
-                                json_end = i + 1
-                                break
-                
-                if json_end > 0:
-                    json_str = remaining[:json_end]
-                    try:
-                        data = json.loads(json_str)
-                        self._handle_json_message(data)
-                        
-                    except json.JSONDecodeError as e:
-                        pass
-                        
-        except Exception as e:
-            pass
     
     def _handle_json_message(self, data: Dict[str, Any]) -> None:
 
@@ -315,24 +209,7 @@ class RealTimeStreamMonitor:
             self.total_input_tokens = stats.get('input_tokens', 0)
             self.total_output_tokens = stats.get('output_tokens', 0)
             return
-            
-        # if message_type == 'assistant':
-        #     message = data.get('message', {})
-        #     content = message.get('content', [])
-            
-        #     if isinstance(content, list):
-        #         for item in content:
-        #             if isinstance(item, dict) and item.get('type') == 'tool_use':
-        #                 tool_name = item.get('name', '')
-        #                 tool_id = item.get('id', '')
-                        
-        #                 if tool_name:
-        #                     self._handle_tool_call(tool_name, tool_id)
-            
 
-        #     usage = message.get('usage', {})
-        #     if usage:
-        #         self._handle_usage_data(usage, message.get('model', ''))
     
     def _handle_tool_call(self, tool_name: str, tool_id: str = "") -> None:
 
@@ -361,8 +238,7 @@ class RealTimeStreamMonitor:
         input_tokens = usage.get('input_tokens', 0)
         output_tokens = usage.get('output_tokens', 0)
         
-        if input_tokens > 0 or output_tokens > 0:
-     
+        if input_tokens > 0 or output_tokens > 0:     
             self.total_input_tokens += input_tokens
             self.total_output_tokens += output_tokens
             

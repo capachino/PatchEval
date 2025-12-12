@@ -45,7 +45,7 @@ class ScriptGenerator:
         for placeholder, value in replacements.items():
             content = content.replace(placeholder, value)
             
-        return content    
+        return content
     
     @staticmethod 
     def generate_settings_file(model: str) -> str:

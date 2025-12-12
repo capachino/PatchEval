@@ -33,8 +33,7 @@ MAX_RETRIES = 3
 
 def run_work_container_no_mount(image_name: str,
                               problem_id: str,
-                              semaphore: Any,
-                              modelname: str) -> str:
+                              semaphore: Any) -> str:
     """Start work container without any volume mounting.
     
     Args:
@@ -48,7 +47,7 @@ def run_work_container_no_mount(image_name: str,
     Raises:
         RuntimeError: If container creation fails
     """
-    container_name = f"bench.{problem_id}.{modelname}.work"
+    container_name = f"bench.{problem_id}.work"
     
     # Stop any existing work containers
     stop_container(container_name)

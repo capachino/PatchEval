@@ -155,8 +155,6 @@ def handle_batch_command(args):
 
 def handle_single_command(args):
     """Handle single CVE processing command."""
-    timeout_seconds = parse_timeout(args.timeout)
-    
     # Check API credentials
     try:
         api_key = get_api_key_and_validate()
@@ -180,7 +178,6 @@ def handle_single_command(args):
         result = run_single_cve(
             record=record,
             outputs_root=args.outputs_root,
-            timeout_seconds=timeout_seconds,
             keep_container=args.keep_container,
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),

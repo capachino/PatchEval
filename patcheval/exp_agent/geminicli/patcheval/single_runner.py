@@ -36,12 +36,12 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 # - Removed cost and tool limits
 # - Removed `settings_file` arg
 # - Removed readable logs
+# - Removed `timeout` arg as it wasn't used
 
 
 def run_single_cve(record: CVERecord,
                   outputs_root: Path,
                   semaphore: Optional[threading.Semaphore] = None,
-                  timeout_seconds: int = 2700,
                   keep_container: bool = False,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
@@ -80,10 +80,9 @@ def run_single_cve(record: CVERecord,
         result["stage"] = "docker_setup"
         pull_image_with_retry(record.image_name, semaphore)
         
-        modelname=os.getenv("MY_MODEL")
         result["stage"] = "work_container"
         container_id = run_work_container_no_mount(
-            record.image_name, problem_id, semaphore, modelname)
+            record.image_name, problem_id, semaphore)
         result["container_id"] = container_id
         
         
