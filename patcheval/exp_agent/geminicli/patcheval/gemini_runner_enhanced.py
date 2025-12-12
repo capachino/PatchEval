@@ -37,6 +37,7 @@ from .stream_monitor import RealTimeStreamMonitor, EnhancedProcessStreamReader
 # - Removed cost and tool limits
 # - Removed `settings` file related code
 # - Removed readable logs
+# - Removed `stop_callbacks` handling
 
 
 class GeminiRunnerEnhanced:
@@ -56,9 +57,6 @@ class GeminiRunnerEnhanced:
         self.process_log = []
         self.start_time = None
         self.end_time = None
-        
-        self.execution_stopped = False
-        self.stop_reason = ""
         
         self.output_buffer = []
         self.temp_log_file = None
@@ -181,15 +179,7 @@ class GeminiRunnerEnhanced:
             cmd = self._build_gemini_command()
             
             
-            start_time = time.time()
-            
-            
-            def on_limit_reached(reason: str):
-                self.execution_stopped = True
-                self.stop_reason = reason
-                            
-            self.stream_monitor.add_stop_callback(on_limit_reached)
-            
+            start_time = time.time()                            
             
             env_vars = []
             
@@ -203,13 +193,7 @@ class GeminiRunnerEnhanced:
                 
                 self._update_real_time_log(status="processing")
                 
-                if self.execution_stopped:
-                    self._log_process_step("command_stopped", f"stop execution: {self.stop_reason}")
-                    self._update_real_time_log(status="stopped")
-                    success = False
-                    result = f"stop execution: {self.stop_reason}\n\n{result}"
-                else:
-                    success = True
+                success = True
                     
             except subprocess.TimeoutExpired as e:
                 self._update_real_time_log(status="timeout")
@@ -451,8 +435,7 @@ class GeminiRunnerEnhanced:
             
             return_code = process.returncode
             if return_code is not None and return_code != 0:
-                if not self.execution_stopped: 
-                    raise RuntimeError(f"command exec fail, return code: {return_code}, result: {result}")
+                raise RuntimeError(f"command exec fail, return code: {return_code}, result: {result}")
             
             return result
             

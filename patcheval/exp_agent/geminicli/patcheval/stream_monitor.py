@@ -29,6 +29,7 @@ from collections import defaultdict
 # - Removed tool use heuristics
 # - Removed ID format tracking
 # - Removed JSON buffering logic
+# - Removed `stop_callbacks` handling
 
 
 class RealTimeStreamMonitor:
@@ -42,22 +43,7 @@ class RealTimeStreamMonitor:
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         
-        self.should_stop = False
         self.process = None
-        self.stop_callbacks = []
-        
-        self._monitor_thread = None
-        self._stop_event = threading.Event()
-        
-    def add_stop_callback(self, callback: Callable[[str], None]) -> None:
-        self.stop_callbacks.append(callback)
-        
-    def _notify_stop(self, reason: str) -> None:
-        for callback in self.stop_callbacks:
-            try:
-                callback(reason)
-            except Exception as e:
-                pass
     
     def monitor_process(self, process: subprocess.Popen) -> None:
         self.process = process
@@ -123,27 +109,7 @@ class RealTimeStreamMonitor:
         if input_tokens > 0 or output_tokens > 0:     
             self.total_input_tokens += input_tokens
             self.total_output_tokens += output_tokens
-            
-    
-    def _force_stop_process(self, process: subprocess.Popen) -> None:
-        try:
 
-            if process.poll() is None:
-                process.terminate()
-                
-
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-
-                    process.kill()
-                    process.wait()
-                    
-        except Exception as e:
-                pass
-    def stop_monitoring(self) -> None:
- 
-        pass
     
     def analyze_completed_output(self, output_text: str) -> Dict[str, Any]:
         self.tool_calls.clear()
@@ -206,12 +172,7 @@ class EnhancedProcessStreamReader:
                 return_code = self.process.poll()
                 if return_code is not None:
                     break
-                
-       
-                if self.monitor.should_stop:
-                    break
-                
-
+                       
                 if self.process.stdout:
                     try:
                         line = self.process.stdout.readline()
@@ -233,12 +194,7 @@ class EnhancedProcessStreamReader:
                                 len(output_chunk_buffer) >= 50):
                                 self._update_real_time_log(output_chunk_buffer)
                                 output_chunk_buffer.clear()
-                                last_log_update = current_time
-                            
-                         
-                            if self.monitor.should_stop:
-                                break
-                                
+                                last_log_update = current_time                                                                                     
                     except Exception as e:
                         pass
                 
