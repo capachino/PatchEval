@@ -1,0 +1,302 @@
+[
+    {
+        "id": "CVE-2015-3295",
+        "vul_type": "Cross-site scripting (XSS)"
+    },
+    {
+        "id": "CVE-2016-1000232",
+        "vul_type": "Other"
+    },
+    {
+        "id": "CVE-2016-10548",
+        "vul_type": "Cross-site scripting (XSS)"
+    },
+    {
+        "id": "CVE-2017-1000189",
+        "vul_type": "Other"
+    },
+    {
+        "id": "CVE-2017-1001003",
+        "vul_type": "Prototype pollution"
+    },
+    {
+        "id": "CVE-2017-1001004",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2017-16025",
+        "vul_type": "Other"
+    },
+    {
+        "id": "CVE-2017-16042",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2017-16083",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2017-16100",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2017-16198",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2018-16482",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2018-20834",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2018-3733",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2018-3734",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2018-3772",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2018-3778",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2018-3785",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2019-10787",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2019-10788",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2019-10792",
+        "vul_type": "Prototype pollution"
+    },
+    {
+        "id": "CVE-2019-10795",
+        "vul_type": "Prototype pollution"
+    },
+    {
+        "id": "CVE-2019-15597",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-15084",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2020-17479",
+        "vul_type": "Insecure deserialization"
+    },
+    {
+        "id": "CVE-2020-26226",
+        "vul_type": "Logging of sensitive information"
+    },
+    {
+        "id": "CVE-2020-26237",
+        "vul_type": "Prototype pollution"
+    },
+    {
+        "id": "CVE-2020-26299",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2020-28360",
+        "vul_type": "Server-side request forgery (SSRF)"
+    },
+    {
+        "id": "CVE-2020-28437",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-28494",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7613",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7627",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7631",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7640",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7649",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2020-7674",
+        "vul_type": "Server-side template injection (SSTI)"
+    },
+    {
+        "id": "CVE-2020-7675",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7687",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2020-7764",
+        "vul_type": "Other"
+    },
+    {
+        "id": "CVE-2020-7781",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-7795",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2020-8132",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2021-21321",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2021-21384",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2021-23376",
+        "vul_type": "Command injection"
+    },
+    {
+        "id": "CVE-2021-23384",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2021-23387",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2021-32796",
+        "vul_type": "Cross-site scripting (XSS)"
+    },
+    {
+        "id": "CVE-2021-32803",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2021-32804",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2021-33420",
+        "vul_type": "Insecure deserialization"
+    },
+    {
+        "id": "CVE-2021-3664",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2021-37712",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2021-37713",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2021-41246",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2021-46561",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2022-0235",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2022-0436",
+        "vul_type": "Path traversal"
+    },
+    {
+        "id": "CVE-2022-0512",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2022-0639",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2022-0686",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2022-0691",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2022-0722",
+        "vul_type": "Other"
+    },
+    {
+        "id": "CVE-2022-2421",
+        "vul_type": "Prototype pollution"
+    },
+    {
+        "id": "CVE-2022-24794",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2022-2900",
+        "vul_type": "Server-side request forgery (SSRF)"
+    },
+    {
+        "id": "CVE-2022-29822",
+        "vul_type": "SQL injection (SQLi)"
+    },
+    {
+        "id": "CVE-2022-35949",
+        "vul_type": "Server-side request forgery (SSRF)"
+    },
+    {
+        "id": "CVE-2022-37109",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2023-28155",
+        "vul_type": "Server-side request forgery (SSRF)"
+    },
+    {
+        "id": "CVE-2024-29041",
+        "vul_type": "Open redirect"
+    },
+    {
+        "id": "CVE-2024-30260",
+        "vul_type": "Authentication bypass"
+    },
+    {
+        "id": "CVE-2024-53900",
+        "vul_type": "SQL injection (SQLi)"
+    },
+    {
+        "id": "CVE-2025-23221",
+        "vul_type": "Server-side request forgery (SSRF)"
+    }
+]
