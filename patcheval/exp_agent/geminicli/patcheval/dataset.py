@@ -107,29 +107,3 @@ def load_dataset(jsonl_path: Path,
     
     logging.info(f"Loaded {len(records)} CVE records from {jsonl_path}")
     return records
-
-
-def filter_existing_results(records: List[CVERecord], 
-                           workspace_root: Path) -> List[CVERecord]:
-    """Filter out records that already have complete results.
-    
-    Args:
-        records: List of CVE records
-        workspace_root: Base workspace directory
-        
-    Returns:
-        Filtered list excluding records with existing results
-    """
-    filtered = []
-    
-    for record in records:
-        result_dir = workspace_root / record.problem_id / "rollout_1"
-        patch_file = result_dir / "outputs" / "patches" / f"{record.problem_id}.patch"
-        
-        if patch_file.exists():
-            logging.info(f"Skipping {record.problem_id}, already has results")
-        else:
-            filtered.append(record)
-    
-    logging.info(f"Filtered to {len(filtered)} records without existing results")
-    return filtered

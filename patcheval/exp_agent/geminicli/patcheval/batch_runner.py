@@ -81,7 +81,6 @@ def run_batch_cves(dataset_path: Path,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
-                  settings_file: Optional[str] = None,
                   model: str = "25pro") -> Dict[str, Any]:
     
     start_time = time.time()
