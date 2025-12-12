@@ -164,6 +164,11 @@ class GeminiRunnerEnhanced:
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
+            self._write_file_to_container(
+                "/workspace/problem_statement.md",
+                record.problem_statement
+            )
+            
             self._exec_in_container("chown", f"-R gemini_user:gemini_user {self.work_dir}")
 
             if gemini_extension_path:
