@@ -24,6 +24,8 @@ from collections import defaultdict
 # Log
 # - Updated `_handle_json_message` to parse Gemini output
 # - Removed tool and cost limit enforcement
+# - Removed `ProcessStreamReader`
+# - Removed cost tracking code
 
 
 class RealTimeStreamMonitor:
@@ -36,15 +38,8 @@ class RealTimeStreamMonitor:
         
         self.id_format_stats = defaultdict(int)
         
-        self.current_cost_usd = 0.0
         self.total_input_tokens = 0
         self.total_output_tokens = 0
-        
-        self.pricing = {
-            'claude-3-5-haiku-20241022': {'input': 1.0, 'output': 5.0},
-            'kimi-k2-0711-preview': {'input': 1.0, 'output': 5.0}, 
-            'claude-3-5-sonnet-20241022': {'input': 3.0, 'output': 15.0}
-        }
         
         self.should_stop = False
         self.process = None
@@ -371,15 +366,6 @@ class RealTimeStreamMonitor:
             self.total_input_tokens += input_tokens
             self.total_output_tokens += output_tokens
             
-
-            pricing = self.pricing.get(model, self.pricing['claude-3-5-sonnet-20241022'])
-            
-            input_cost = (input_tokens / 1_000_000) * pricing['input']
-            output_cost = (output_tokens / 1_000_000) * pricing['output']
-            new_cost = input_cost + output_cost
-            
-            self.current_cost_usd += new_cost            
-            
     
     def _force_stop_process(self, process: subprocess.Popen) -> None:
 
@@ -427,7 +413,6 @@ class RealTimeStreamMonitor:
             'tool_breakdown': dict(self.tool_calls),
             'id_format_distribution': dict(self.id_format_stats),
             'cost_estimation': {
-                'current_cost_usd': self.current_cost_usd,
                 'total_input_tokens': self.total_input_tokens,
                 'total_output_tokens': self.total_output_tokens
             }
@@ -447,84 +432,9 @@ class RealTimeStreamMonitor:
             'tool_calls': dict(self.tool_calls),
             'total_tool_calls': self.total_calls,
             'id_format_stats': dict(self.id_format_stats),  
-            'current_cost_usd': self.current_cost_usd,
             'total_input_tokens': self.total_input_tokens,
             'total_output_tokens': self.total_output_tokens,
         }
-
-
-class ProcessStreamReader:
-
-    
-    def __init__(self, process: subprocess.Popen, monitor: RealTimeStreamMonitor):
-        self.process = process
-        self.monitor = monitor
-        self.output_buffer = []
-        self.logger = logging.getLogger(__name__)
-        
-    def read_with_monitoring(self, timeout: Optional[int] = None) -> str:
-
-        start_time = time.time()
-        output_lines = []
-        
-        try:
-            while True:
-
-                if timeout and (time.time() - start_time) > timeout:
-                    raise subprocess.TimeoutExpired(self.process.args, timeout)
-
-                return_code = self.process.poll()
-                if return_code is not None:
-                    break
-                
-
-                if self.monitor.should_stop:
-                    break
-                
-
-                if self.process.stdout:
-                    try:
-                        line = self.process.stdout.readline()
-                        if line:
-
-                            if isinstance(line, bytes):
-                                decoded_line = line.decode('utf-8', errors='ignore')
-                            else:
-                                decoded_line = str(line)
-                            output_lines.append(decoded_line)
-
-                            self.monitor._process_output_line(decoded_line.strip())
-                            
-
-                            if self.monitor.should_stop:
-                                break
-                                
-                    except Exception as e:
-                        pass
-                
-                time.sleep(0.1)
-                
-        finally:
- 
-            try:
-                if self.process.stdout:
-                    remaining_output = self.process.stdout.read()
-                    if remaining_output:
-
-                        if isinstance(remaining_output, bytes):
-                            decoded_output = remaining_output.decode('utf-8', errors='ignore')
-                        else:
-                            decoded_output = str(remaining_output)
-                        output_lines.append(decoded_output)
-                        
-
-                        for line in decoded_output.split('\n'):
-                            if line.strip():
-                                self.monitor._process_output_line(line.strip())
-            except:
-                pass
-        
-        return ''.join(output_lines)
 
 
 class EnhancedProcessStreamReader:
