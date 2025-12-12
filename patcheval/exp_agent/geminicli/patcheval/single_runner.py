@@ -29,7 +29,7 @@ from .patch import write_patch_file, get_patch_stats, validate_patch
 
 # Log
 # - Removed `claude_timeout` related code
-# - Updated `api_provider` handling to include only Gemini for now
+# - Removed `api_provider` arg
 # - Removed `port` arg
 # - Respect `success` result from execute_cve_repair
 # - Removed `strategy` related code
@@ -39,7 +39,6 @@ def run_single_cve(record: CVERecord,
                   outputs_root: Path,
                   semaphore: Optional[threading.Semaphore] = None,
                   timeout_seconds: int = 2700,
-                  api_provider: str = "gemini",
                   keep_container: bool = False,
                   enable_detailed_logging: bool = True,
                   save_process_logs: bool = False,
@@ -64,7 +63,6 @@ def run_single_cve(record: CVERecord,
         "patch_stats": {},
         "error_message": "",
         "stage": "initialization",
-        "api_provider": api_provider
     }
     
     container_id = ""
@@ -73,12 +71,9 @@ def run_single_cve(record: CVERecord,
 
         
         result["stage"] = "api_check"
-        if api_provider == "gemini":
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key:
-                raise RuntimeError("Missing GEMINI_API_KEY environment variable")
-        else:
-            raise RuntimeError(f"Unsupported API provider: {api_provider}")
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing GEMINI_API_KEY environment variable")
         
         result["stage"] = "docker_setup"
         pull_image_with_retry(record.image_name, semaphore)
@@ -98,7 +93,7 @@ def run_single_cve(record: CVERecord,
             settings_file=settings_file
         )
         
-        if not gemini.setup_environment(record, api_key, api_provider, model):
+        if not gemini.setup_environment(record, api_key, model):
             pass
         
         result["stage"] = "gemini_execution"
@@ -161,7 +156,6 @@ def run_single_cve(record: CVERecord,
         full_log = {
             "problem_id": problem_id,
             "cve_id": record.cve_id,
-            "api_provider": api_provider,
             "duration": gemini_duration,
             "patch_stats": patch_stats,
             "gemini_output": output_log,
@@ -225,7 +219,6 @@ def run_single_cve(record: CVERecord,
                 failed_log = {
                     "problem_id": problem_id,
                     "cve_id": record.cve_id,
-                    "api_provider": api_provider,
                     "stage": result["stage"],
                     "error": str(e),
                     "container_logs": container_logs

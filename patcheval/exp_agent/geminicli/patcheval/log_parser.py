@@ -90,7 +90,6 @@ class StreamJsonLogParser:
             'cve_id': agent_log.get('cve_id', 'unknown'),
             'duration': agent_log.get('duration', 0),
             'patch_stats': agent_log.get('patch_stats', {}),
-            'api_provider': agent_log.get('api_provider', 'unknown')
         }
         
         return {
@@ -256,11 +255,6 @@ class StreamJsonLogParser:
         report_lines.append("")
         report_lines.append("## 📊 Summary")
         report_lines.append(f"- Total events: {data['total_events']}")
-        
-        if is_agent_format:
-            report_lines.append(f"- API Provider: {summary.get('api_provider', 'unknown')}")
-        else:
-            report_lines.append(f"- Sessions: {summary.get('session_count', 0)}")
         
         report_lines.append(f"- Messages: {summary['message_count']}")
         report_lines.append(f"- Errors: {summary['error_count']}")

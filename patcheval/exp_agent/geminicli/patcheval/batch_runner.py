@@ -94,7 +94,6 @@ def run_batch_cves(dataset_path: Path,
                   outputs_root: Path,
                   max_workers: int = 1,
                   timeout_seconds: int = 2700,
-                  api_provider: str = "gemini",
                   resume: bool = False,
                   limit: Optional[int] = None,
                   include_ids: Optional[Set[str]] = None,
@@ -142,7 +141,6 @@ def run_batch_cves(dataset_path: Path,
                 outputs_root=outputs_root,
                 semaphore=semaphore,
                 timeout_seconds=timeout_seconds,
-                api_provider=api_provider,
                 keep_container=keep_containers,
                 enable_detailed_logging=enable_detailed_logging,
                 save_process_logs=save_process_logs,
@@ -214,7 +212,6 @@ def run_batch_cves(dataset_path: Path,
         "success_rate": success_rate,
         "total_duration": total_duration,
         "average_duration": total_duration / max(len(records), 1),
-        "api_provider": api_provider,
         "max_workers": max_workers,
         "timeout_seconds": timeout_seconds,
         "timestamp": time.time()
@@ -269,7 +266,6 @@ def _generate_detailed_report(outputs_root: Path, results: list, summary: Dict[s
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write("# Gemini CVE\\n\\n")
             
-            f.write(f"- **API**: {summary['api_provider']}\\n")
             f.write(f"- **total_processed**: {summary['total_processed']}\\n")
             f.write(f"- **successful**: {summary['successful']}\\n")
             f.write(f"- **failed**: {summary['failed']}\\n")

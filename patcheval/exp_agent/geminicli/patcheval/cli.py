@@ -26,10 +26,10 @@ from .dataset import load_dataset
 
 # Log
 # - Removed `claude_timeout` related code
-# - `api-provider` choices updated to only Gemini for now
 # - Removed `port` arg
 # - Removed `strategy` arg
 # - Remove cost and tool limits
+# - Remove `api-provider`
 # - Changed save-process-logs and allow-git-diff-fallback default to True
 # - Added a `model` arg to specify the Gemini model to use
 # - Default `outputs-root` for single command changed to "./outputs/single"
@@ -54,7 +54,6 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--limit", type=int)
     batch_parser.add_argument("--resume", action="store_true")
     batch_parser.add_argument("--keep-containers", action="store_true")
-    batch_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     
 
     batch_parser.add_argument("--enable-detailed-logging", action="store_true", default=True,)
@@ -70,7 +69,6 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--cve-id", type=str, required=True)
     single_parser.add_argument("--timeout", type=str, default="45m")
     single_parser.add_argument("--keep-container", action="store_true")
-    single_parser.add_argument("--api-provider", choices=["gemini"], default="gemini")
     single_parser.add_argument("--interactive", action="store_true")
 
 
@@ -108,14 +106,11 @@ def setup_logging(level=logging.INFO):
     )
 
 
-def get_api_key_and_validate(api_provider: str) -> str:
-    if api_provider == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise RuntimeError("Missing GEMINI_API_KEY environment variable")
-    else:
-        raise RuntimeError(f"Unsupported API provider: {api_provider}")
-    
+def get_api_key_and_validate() -> str:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing GEMINI_API_KEY environment variable")
+
     return api_key
 
 
@@ -125,7 +120,7 @@ def handle_batch_command(args):
     
     # Check API credentials  
     try:
-        api_key = get_api_key_and_validate(args.api_provider)
+        api_key = get_api_key_and_validate()
     except RuntimeError as e:
         logging.error(str(e))
         return 1
@@ -136,7 +131,6 @@ def handle_batch_command(args):
             outputs_root=args.outputs_root,
             max_workers=args.max_workers,
             timeout_seconds=timeout_seconds,
-            api_provider=args.api_provider,
             resume=args.resume,
             limit=args.limit,
             keep_containers=args.keep_containers,
@@ -167,7 +161,7 @@ def handle_single_command(args):
     
     # Check API credentials
     try:
-        api_key = get_api_key_and_validate(args.api_provider)
+        api_key = get_api_key_and_validate()
     except RuntimeError as e:
         logging.error(str(e))
         return 1
@@ -189,7 +183,6 @@ def handle_single_command(args):
             record=record,
             outputs_root=args.outputs_root,
             timeout_seconds=timeout_seconds,
-            api_provider=args.api_provider,
             keep_container=args.keep_container,
             enable_detailed_logging=getattr(args, 'enable_detailed_logging', True),
             save_process_logs=getattr(args, 'save_process_logs', False),

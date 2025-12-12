@@ -64,7 +64,7 @@ class GeminiRunnerEnhanced:
         self.temp_log_file = None
         self.cve_id = None
     def setup_environment(self, record: CVERecord,
-                         api_key: str, api_provider: str, model: str) -> bool:
+                         api_key: str, model: str) -> bool:
         try:
             self.cve_id = record.cve_id  
             
@@ -311,7 +311,7 @@ class GeminiRunnerEnhanced:
             else:
                 self.logger.info(f"[{step_type.upper()}] {message}")
     
-    def _init_real_time_log(self, record: CVERecord, api_provider: str) -> None:
+    def _init_real_time_log(self, record: CVERecord) -> None:
         try:
             outputs_root = Path("./outputs")
             outputs_root.mkdir(parents=True, exist_ok=True)
@@ -322,7 +322,6 @@ class GeminiRunnerEnhanced:
             initial_log = {
                 "problem_id": record.problem_id,
                 "cve_id": record.cve_id,
-                "api_provider": api_provider,
                 "duration": 0,
                 "patch_stats": {},
                 "gemini_output": "",
