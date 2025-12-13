@@ -206,12 +206,13 @@ class GeminiRunnerEnhanced:
             return False
     
     def execute_cve_repair(self,
-                          timeout: int = 1800) -> Tuple[bool, str, str]:
+                          timeout: int = 1800,
+                          command_name: str = "default") -> Tuple[bool, str, str]:
         try:
             self.start_time = time.time()
             
             
-            cmd = self._build_gemini_command()
+            cmd = self._build_gemini_command(command_name)
             
             
             start_time = time.time()                            
@@ -268,11 +269,9 @@ class GeminiRunnerEnhanced:
             
             return False, str(e), ""
     
-    def _build_gemini_command(self) -> str:
-        command_name = "default"
-        
+    def _build_gemini_command(self, command_name: str = "default") -> str:        
         cmd_parts = [
-            f"gemini --prompt /{command_name}",
+            f"gemini --prompt \"/{command_name} $(< ../problem_statement.md)\"",
             "--yolo",
         ]
         

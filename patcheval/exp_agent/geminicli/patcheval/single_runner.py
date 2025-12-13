@@ -47,7 +47,8 @@ def run_single_cve(record: CVERecord,
                   save_process_logs: bool = False,
                   allow_git_diff_fallback: bool = False,
                   model: str = "25pro",
-                  gemini_extension_path: Optional[str] = None
+                  gemini_extension_path: Optional[str] = None,
+                  command_name: str = "default"
                   ) -> Dict[str, Any]:
     
     if semaphore is None:
@@ -101,7 +102,7 @@ def run_single_cve(record: CVERecord,
         result["stage"] = "gemini_execution"
         
         gemini_start = time.time()
-        success, output_log, patch_content = gemini.execute_cve_repair()
+        success, output_log, patch_content = gemini.execute_cve_repair(command_name=command_name)
         
         result["is_success"] = success
         
@@ -219,8 +220,7 @@ def run_single_cve(record: CVERecord,
         if container_id:
             try:
                 if not keep_container:
-                    force_stop = hasattr(gemini, 'execution_stopped') and gemini.execution_stopped
-                    stop_container(f"bench.{problem_id}.work", force=force_stop)
+                    stop_container(f"bench.{problem_id}.work")
                 else:
                     pass
             except Exception as cleanup_e:

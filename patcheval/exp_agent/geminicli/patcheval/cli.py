@@ -63,6 +63,8 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     batch_parser.add_argument("--gemini-extension-path", type=str,
                               help="Local path to a gemini extension to mount.")
+    batch_parser.add_argument("--command-name", type=str, default="default",
+                              help="The name of the command to run (don't include the slash).")
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -80,6 +82,8 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
     single_parser.add_argument("--gemini-extension-path", type=str,
                                help="Local path to a gemini extension to mount.")
+    single_parser.add_argument("--command-name", type=str, default="default",
+                               help="The name of the command to run (don't include the slash).")
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -141,7 +145,8 @@ def handle_batch_command(args):
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
             model=args.model,
-            gemini_extension_path=getattr(args, 'gemini_extension_path', None)
+            gemini_extension_path=getattr(args, 'gemini_extension_path', None),
+            command_name=args.command_name
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -188,7 +193,8 @@ def handle_single_command(args):
             save_process_logs=getattr(args, 'save_process_logs', False),
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
             model=args.model,
-            gemini_extension_path=getattr(args, 'gemini_extension_path', None)
+            gemini_extension_path=getattr(args, 'gemini_extension_path', None),
+            command_name=args.command_name
         )
         
         if result["is_success"]:
