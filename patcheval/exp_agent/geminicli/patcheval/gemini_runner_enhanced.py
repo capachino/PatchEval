@@ -269,12 +269,19 @@ class GeminiRunnerEnhanced:
             
             return False, str(e), ""
     
-    def _build_gemini_command(self, command_name: str = "default") -> str:        
-        cmd_parts = [
-            f"gemini --prompt \"/{command_name} $(< ../problem_statement.md)\"",
-            "--yolo",
-        ]
-        
+    def _build_gemini_command(self, command_name: str = "default") -> str:
+        if command_name == "default":
+            # TODO: the default prompt already includes the problem statement so don't include it again. This is a weird hack and can instead be explicit.
+            cmd_parts = [
+                f"gemini --prompt /{command_name}",
+            ]
+        else:
+            # TODO: consider heredoc style for better readability and to prevent character limit issues.
+            cmd_parts = [
+                f"gemini --prompt \"/{command_name} $(< ../problem_statement.md)\"",
+            ]
+
+        cmd_parts.append("--yolo")
         
         if self.enable_detailed_logging:
             cmd_parts.extend([
