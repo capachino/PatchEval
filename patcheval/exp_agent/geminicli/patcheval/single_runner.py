@@ -15,6 +15,7 @@ import logging
 import time
 import threading
 import os
+import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -170,11 +171,26 @@ def run_single_cve(record: CVERecord,
         if enable_detailed_logging:
             full_log["detailed_process"] = gemini.get_detailed_process_log()
         
-        import json
         log_file_path.write_text(json.dumps(full_log, indent=2, ensure_ascii=False))
         
         gemini_output_path = outputs_root / "agent_logs" / f"{problem_id}.gemini"
         gemini_output_path.write_text(output_log)
+
+        try:
+            messages = []
+            for line in output_log.splitlines():
+                try:
+                    data = json.loads(line)
+                    if isinstance(data, dict) and data.get("type") == "message" and "content" in data:
+                        messages.append(data["content"])
+                except json.JSONDecodeError:
+                    pass  # Ignore invalid JSON lines (e.g., stderr)
+            
+            if messages:
+                messages_output_path = outputs_root / "agent_logs" / f"{problem_id}.messages"
+                messages_output_path.write_text("".join(messages))
+        except Exception as e:
+            logger.warning(f"Failed to write Gemini messages file: {e}")
         
         if save_process_logs:
             process_log_path = outputs_root / "process_logs" / f"{problem_id}_process.json"
@@ -216,7 +232,6 @@ def run_single_cve(record: CVERecord,
                     "container_logs": container_logs
                 }
                 
-                import json
                 log_file_path.write_text(json.dumps(failed_log, indent=2, ensure_ascii=False))
         except Exception as log_e:
             logger.warning(f"{log_e}")
