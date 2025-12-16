@@ -44,7 +44,8 @@ class GeminiRunnerEnhanced:
     
     def __init__(self, container_id: str, work_dir: str, 
                  enable_detailed_logging: bool = True,
-                 allow_git_diff_fallback: bool = False):
+                 allow_git_diff_fallback: bool = False,
+                 enable_web_search: bool = False):
         self.container_id = container_id
         self.work_dir = work_dir
         self.allow_git_diff_fallback = allow_git_diff_fallback
@@ -53,6 +54,7 @@ class GeminiRunnerEnhanced:
         self.stream_monitor = RealTimeStreamMonitor()
 
         self.enable_detailed_logging = enable_detailed_logging
+        self.enable_web_search = enable_web_search
         
         self.process_log = []
         self.start_time = None
@@ -160,7 +162,10 @@ class GeminiRunnerEnhanced:
             
             self._log_process_step("command_generation", f"generate file: default.toml")
             
-            settings_content = ScriptGenerator.generate_settings_file(model)
+            settings_content = ScriptGenerator.generate_settings_file(
+                model,
+                self.enable_web_search
+            )
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             

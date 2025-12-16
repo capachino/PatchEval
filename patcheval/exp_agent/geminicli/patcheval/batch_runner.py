@@ -83,7 +83,8 @@ def run_batch_cves(dataset_path: Path,
                   allow_git_diff_fallback: bool = False,
                   model: str = "25pro",
                   gemini_extension_path: Optional[str] = None,
-                  command_name: str = "default"
+                  command_name: str = "default",
+                  enable_web_search: bool = False
                   ) -> Dict[str, Any]:
     
     start_time = time.time()
@@ -127,7 +128,8 @@ def run_batch_cves(dataset_path: Path,
                 allow_git_diff_fallback=allow_git_diff_fallback,
                 model=model,
                 gemini_extension_path=gemini_extension_path,
-                command_name=command_name
+                command_name=command_name,
+                enable_web_search=enable_web_search
             ): record for record in records
         }
         

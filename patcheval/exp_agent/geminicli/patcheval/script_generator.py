@@ -48,16 +48,18 @@ class ScriptGenerator:
         return content
     
     @staticmethod 
-    def generate_settings_file(model: str) -> str:
+    def generate_settings_file(model: str, enable_web_search: bool) -> str:
 
-        settings = {
+        settings: Dict[str, Any] = {
             "security": {
                 "auth": {
                     "selectedType": "gemini-api-key"
                 }
             },
-            "excludeTools": ["google_web_search"]
         }
+
+        if not enable_web_search:
+            settings["excludeTools"] = ["google_web_search"]
         
         if model == '3pro':
             settings["general"] = {"previewFeatures": True}

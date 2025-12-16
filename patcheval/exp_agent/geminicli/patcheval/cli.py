@@ -65,6 +65,8 @@ def parse_args() -> argparse.Namespace:
                               help="Local path to a gemini extension to mount.")
     batch_parser.add_argument("--command-name", type=str, default="default",
                               help="The name of the command to run (don't include the slash).")
+    batch_parser.add_argument("--enable-web-search", action="store_true", default=False,
+                              help="Enable web search for the agent.")
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -84,6 +86,8 @@ def parse_args() -> argparse.Namespace:
                                help="Local path to a gemini extension to mount.")
     single_parser.add_argument("--command-name", type=str, default="default",
                                help="The name of the command to run (don't include the slash).")
+    single_parser.add_argument("--enable-web-search", action="store_true", default=False,
+                               help="Enable web search for the agent.")
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -146,7 +150,8 @@ def handle_batch_command(args):
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
             model=args.model,
             gemini_extension_path=getattr(args, 'gemini_extension_path', None),
-            command_name=args.command_name
+            command_name=args.command_name,
+            enable_web_search=args.enable_web_search
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -194,7 +199,8 @@ def handle_single_command(args):
             allow_git_diff_fallback=getattr(args, 'allow_git_diff_fallback', False),
             model=args.model,
             gemini_extension_path=getattr(args, 'gemini_extension_path', None),
-            command_name=args.command_name
+            command_name=args.command_name,
+            enable_web_search=args.enable_web_search
         )
         
         if result["is_success"]:

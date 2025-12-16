@@ -48,7 +48,8 @@ def run_single_cve(record: CVERecord,
                   allow_git_diff_fallback: bool = False,
                   model: str = "25pro",
                   gemini_extension_path: Optional[str] = None,
-                  command_name: str = "default"
+                  command_name: str = "default",
+                  enable_web_search: bool = False
                   ) -> Dict[str, Any]:
     
     if semaphore is None:
@@ -93,7 +94,8 @@ def run_single_cve(record: CVERecord,
             container_id, 
             record.work_dir,
             enable_detailed_logging=enable_detailed_logging,
-            allow_git_diff_fallback=allow_git_diff_fallback
+            allow_git_diff_fallback=allow_git_diff_fallback,
+            enable_web_search=enable_web_search
         )
         
         if not gemini.setup_environment(record, api_key, model, gemini_extension_path):
