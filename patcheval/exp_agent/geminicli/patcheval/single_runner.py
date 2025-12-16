@@ -171,6 +171,9 @@ def run_single_cve(record: CVERecord,
         import json
         log_file_path.write_text(json.dumps(full_log, indent=2, ensure_ascii=False))
         
+        gemini_output_path = outputs_root / "agent_logs" / f"{problem_id}.gemini"
+        gemini_output_path.write_text(output_log)
+        
         if save_process_logs:
             process_log_path = outputs_root / "process_logs" / f"{problem_id}_process.json"
             process_log_path.parent.mkdir(exist_ok=True)
