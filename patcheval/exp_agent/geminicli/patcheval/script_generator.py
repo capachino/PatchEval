@@ -61,7 +61,7 @@ class ScriptGenerator:
         if not enable_web_search:
             settings["excludeTools"] = ["google_web_search"]
         
-        if model == '3pro':
+        if model == '3pro' or model == '3flash':
             settings["general"] = {"previewFeatures": True}
         
         import json

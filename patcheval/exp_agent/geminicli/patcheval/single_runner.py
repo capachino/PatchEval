@@ -105,7 +105,7 @@ def run_single_cve(record: CVERecord,
         result["stage"] = "gemini_execution"
         
         gemini_start = time.time()
-        success, output_log, patch_content = gemini.execute_cve_repair(command_name=command_name)
+        success, output_log, patch_content = gemini.execute_cve_repair(command_name=command_name, model=model)
         
         result["is_success"] = success
         

@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--enable-detailed-logging", action="store_true", default=True,)
     batch_parser.add_argument("--save-process-logs", action="store_true", default=True)
     batch_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
-    batch_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
+    batch_parser.add_argument("--model", choices=["25pro", "3pro", "3flash"], default="25pro")
     batch_parser.add_argument("--gemini-extension-path", type=str,
                               help="Local path to a gemini extension to mount.")
     batch_parser.add_argument("--command-name", type=str, default="default",
@@ -81,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     single_parser.add_argument("--enable-detailed-logging", action="store_true", default=True)
     single_parser.add_argument("--save-process-logs", action="store_true", default=True)        
     single_parser.add_argument("--allow-git-diff-fallback", action="store_true", default=True)
-    single_parser.add_argument("--model", choices=["25pro", "3pro"], default="25pro")
+    single_parser.add_argument("--model", choices=["25pro", "3pro", "3flash"], default="25pro")
     single_parser.add_argument("--gemini-extension-path", type=str,
                                help="Local path to a gemini extension to mount.")
     single_parser.add_argument("--command-name", type=str, default="default",

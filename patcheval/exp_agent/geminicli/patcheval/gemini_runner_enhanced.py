@@ -212,14 +212,13 @@ class GeminiRunnerEnhanced:
     
     def execute_cve_repair(self,
                           timeout: int = 1800,
-                          command_name: str = "default") -> Tuple[bool, str, str]:
+                          command_name: str = "default",
+                          model: str = "25pro") -> Tuple[bool, str, str]:
         try:
             self.start_time = time.time()
-            
-            
-            cmd = self._build_gemini_command(command_name)
-            
-            
+
+            cmd = self._build_gemini_command(model, command_name)
+
             start_time = time.time()                            
             
             env_vars = []
@@ -274,7 +273,7 @@ class GeminiRunnerEnhanced:
             
             return False, str(e), ""
     
-    def _build_gemini_command(self, command_name: str = "default") -> str:
+    def _build_gemini_command(self, model: str, command_name: str = "default") -> str:
         if command_name == "default":
             # TODO: the default prompt already includes the problem statement so don't include it again. This is a weird hack and can instead be explicit.
             cmd_parts = [
@@ -295,7 +294,12 @@ class GeminiRunnerEnhanced:
             ])
         else:
             cmd_parts.append("--output-format json")  
-                
+            
+        if model == '3pro':
+            cmd_parts.append("--model gemini-3-pro-preview")
+        elif model == '3flash':
+            cmd_parts.append("--model gemini-3-flash-preview")
+
         command = " ".join(cmd_parts)
         self._log_process_step("command_build", f"build command: {command}")
         
