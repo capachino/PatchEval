@@ -14,11 +14,12 @@ set -o pipefail
 
 # Check if a CVE ID is provided
 if [ -z "$1" ]; then
-  echo "Usage: $0 <CVE_ID>"
+  echo "Usage: $0 <CVE_ID> [PATCH_BATCH_ID]"
   exit 1
 fi
 
 CVE_ID=$1
+PATCH_BATCH_ID=$2
 
 # Run extraction script
 # Use -u for unbuffered output so logs appear instantly
@@ -30,4 +31,8 @@ if [ ! -d "$CVE_ID" ]; then
     exit 1
 fi
 
-python3 -u "local.py" --cve "$CVE_ID"
+if [ -n "$PATCH_BATCH_ID" ]; then
+    python3 -u "local.py" --cve "$CVE_ID" --patch_batch_id "$PATCH_BATCH_ID"
+else
+    python3 -u "local.py" --cve "$CVE_ID"
+fi

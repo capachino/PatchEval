@@ -52,6 +52,9 @@ def main() -> None:
     parser.add_argument(
         "--cve", type=str, required=True, help="The CVE ID to prepare the workspace for."
     )
+    parser.add_argument(
+        "--patch_batch_id", type=str, help="The ID of the batch run to retrieve the fix patch from."
+    )
     args = parser.parse_args()
 
     docker_metadata = find_docker_metadata_by_cve(args.cve)
@@ -80,6 +83,26 @@ def main() -> None:
         f.write(problem_statement)
     logger.info("Wrote problem_statement.md for CVE: %s", args.cve)
 
+    if args.patch_batch_id:
+        geminicli_path = get_project_root() / "patcheval" / "exp_agent" / "geminicli"
+        source_patch_path = (
+            geminicli_path
+            / "evaluation_output"
+            / "results"
+            / args.patch_batch_id
+            / "logs"
+            / args.cve
+            / "fix.patch"
+        )
+        if source_patch_path.exists():
+            content = source_patch_path.read_text()
+            dest_patch_path = workspace_dir / "fix.patch"
+            dest_patch_path.write_text(content)
+            logger.info("Overwrote fix.patch with content from batch %s", args.patch_batch_id)
+        else:
+            logger.error("Patch file not found for batch %s at %s", args.patch_batch_id, source_patch_path)
+            sys.exit(1)
+    
     modify_run_script(workspace_dir / "vul-run.sh", workspace_dir, args.cve)
     modify_run_script(workspace_dir / "fix-run.sh", workspace_dir, args.cve)
     modify_run_script(workspace_dir / "prepare.sh", workspace_dir, args.cve)
