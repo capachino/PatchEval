@@ -38,5 +38,7 @@ cd "$CVE_ID" || exit
 PROMPT_FILE="../outputs/${CVE_ID}_${BATCH_ID}_prompt.md"
 RESPONSE_FILE="../outputs/${CVE_ID}_${BATCH_ID}_response"
 
-# Run the python script, save the prompt, pipe to gemini, and save the response
-python3 -u "../main.py" --cve "$CVE_ID" --batch_id "$BATCH_ID" | tee "$PROMPT_FILE" | gemini | tee "$RESPONSE_FILE"
+# Run the python script, save the prompt to a file, and call gemini with -i
+# python3 -u "../main.py" --cve "$CVE_ID" --batch_id "$BATCH_ID" | tee "$PROMPT_FILE" | gemini | tee "$RESPONSE_FILE"
+python3 -u "../main.py" --cve "$CVE_ID" --batch_id "$BATCH_ID" > "$PROMPT_FILE"
+gemini -i "$(cat "$PROMPT_FILE")"
