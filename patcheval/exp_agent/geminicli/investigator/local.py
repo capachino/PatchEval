@@ -3,6 +3,7 @@ import json
 import logging
 import stat
 import sys
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -15,6 +16,7 @@ def get_project_root() -> Path:
     script_dir = Path(__file__).parent.resolve()
     return script_dir.parents[3]
 
+
 def find_docker_metadata_by_cve(cve_id: str) -> Optional[Dict[str, Any]]:
     path = get_project_root() / "patcheval" / "exp_agent" / "geminicli" / "dataset.jsonl"
     with path.open("r") as f:
@@ -23,6 +25,23 @@ def find_docker_metadata_by_cve(cve_id: str) -> Optional[Dict[str, Any]]:
             if record.get("cve_id") == cve_id:
                 return record
     return None
+
+
+def modify_run_script(script_path: Path, workspace_dir: Path, cve_id: str) -> None:
+    if script_path.exists():
+        logger.info("Modifying %s for CVE: %s", script_path.name, cve_id)
+        with script_path.open("r") as f:
+            content = f.read()
+
+        content = content.replace("/workspace/", workspace_dir.as_posix() + "/")
+
+        with script_path.open("w") as f:
+            f.write(content)
+        logger.info("%s modified for CVE: %s", script_path.name, cve_id)
+
+        current_permissions = script_path.stat().st_mode
+        script_path.chmod(current_permissions | stat.S_IEXEC)
+        logger.info("Made %s executable for CVE: %s", script_path.name, cve_id)
 
 
 def main() -> None:
@@ -60,23 +79,19 @@ def main() -> None:
     with problem_statement_path.open("w") as f:
         f.write(problem_statement)
     logger.info("Wrote problem_statement.md for CVE: %s", args.cve)
-        
-    vul_run_path = workspace_dir / "vul-run.sh"
-    if vul_run_path.exists():
-        logger.info("Modifying vul-run.sh for CVE: %s", args.cve)
-        with vul_run_path.open("r") as f:
-            content = f.read()
-        
-        content = content.replace("cd /workspace/", "cd ")
-        content = content.replace("/workspace/test.patch", "../test.patch")
 
-        with vul_run_path.open("w") as f:
-            f.write(content)
-        logger.info("vul-run.sh modified for CVE: %s", args.cve)
-        
-        current_permissions = vul_run_path.stat().st_mode
-        vul_run_path.chmod(current_permissions | stat.S_IEXEC)
-        logger.info("Made vul-run.sh executable for CVE: %s", args.cve)    
+    modify_run_script(workspace_dir / "vul-run.sh", workspace_dir, args.cve)
+    modify_run_script(workspace_dir / "fix-run.sh", workspace_dir, args.cve)
+    modify_run_script(workspace_dir / "prepare.sh", workspace_dir, args.cve)
+
+    prepare_script = workspace_dir / "prepare.sh"
+    if prepare_script.exists():
+        logger.info("Running prepare.sh for CVE: %s", args.cve)
+        try:
+            subprocess.run([str(prepare_script)], cwd=str(workspace_dir), check=True)
+        except subprocess.CalledProcessError as e:
+            logger.error("Failed to run prepare.sh: %s", e)
+            sys.exit(1)
 
     logger.info("Preparation complete for CVE: %s, workspace prepared at: %s", args.cve, workspace_dir)
     logger.info("`cd %s` to access the repo directory.", repo_dir)
