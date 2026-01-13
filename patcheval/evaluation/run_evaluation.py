@@ -19,6 +19,7 @@ import argparse
 import os
 import re
 import csv
+import subprocess
 from collections import defaultdict
 import json
 import tempfile
@@ -48,7 +49,73 @@ class DockerManager:
         """
         image_name = f"ghcr.io/anonymous2578-data/{cve.lower()}:latest"
         volumes = {}
-        def _create_patch_file(llm_patch):
+        tmp_file_path = None
+
+        # Collect conflicting files from local overrides and the container image itself
+        override_dir = os.path.join(os.path.dirname(__file__), "overrides", cve)
+        conflicting_files = set()
+        has_local_test_patch = False
+
+        # 1. Check local overrides for files to protect (specifically test.patch)
+        if os.path.exists(override_dir):
+            self.logger.info(f"Found override directory: {override_dir}")
+            for filename in os.listdir(override_dir):
+                file_path = os.path.join(override_dir, filename)
+                if os.path.isfile(file_path):
+                    self.logger.info(f"Mounting override: {filename}")
+                    volumes[file_path] = {'bind': f'/workspace/{filename}', 'mode': 'rw'}
+                    
+                    if filename == 'test.patch':
+                        has_local_test_patch = True
+                        try:
+                            # Use lsdiff to identify files modified by the override patch
+                            output = subprocess.check_output(["lsdiff", "--strip=1", file_path], stderr=subprocess.DEVNULL).decode('utf-8')
+                            for line in output.splitlines():
+                                if line.strip():
+                                    conflicting_files.add(line.strip())
+                        except Exception as e:
+                            self.logger.warning(f"Failed to analyze local patch {filename} for conflicts: {e}")
+
+        # 2. Also try to extract test.patch from the container image itself, IF no local override was found
+        if not has_local_test_patch:
+            try:
+                # Cat test.patch in /workspace of the image to see what it modifies
+                # Using /bin/sh -c explicitly as the command, and overriding entrypoint
+                image_patches_raw = self.client.containers.run(
+                    image_name, 
+                    command=['cat /workspace/test.patch'],
+                    remove=True,
+                    entrypoint=["/bin/sh", "-c"]
+                )
+                if image_patches_raw:
+                    # Use DEVNULL for stderr to avoid noise/errors from lsdiff
+                    proc = subprocess.Popen(["lsdiff", "--strip=1"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                    stdout, _ = proc.communicate(input=image_patches_raw)
+                    if proc.returncode == 0:
+                        for line in stdout.decode('utf-8').splitlines():
+                            if line.strip():
+                                conflicting_files.add(line.strip())
+            except Exception as e:
+                # It's normal if test.patch doesn't exist in the container
+                self.logger.debug(f"Could not extract internal test.patch for conflict analysis: {e}")
+
+        def _create_patch_file(llm_patch, conflicts):
+            # Targeted filtering based ONLY on identified conflicts in test.patch
+            if conflicts:
+                try:
+                    cmd = ["filterdiff"]
+                    for c in conflicts:
+                        cmd.extend(["-x", f"*/{c}"])
+                    
+                    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    stdout, stderr = proc.communicate(input=llm_patch.encode('utf-8'))
+                    
+                    if proc.returncode == 0:
+                        llm_patch = stdout.decode('utf-8')
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"Failed to filter conflicting files: {e}")
+
             fd, tmp_file_path = tempfile.mkstemp(suffix='.patch')
             with os.fdopen(fd, 'w', encoding='utf-8') as tmp_file:
                 tmp_file.write(llm_patch)
@@ -57,19 +124,8 @@ class DockerManager:
             return tmp_file_path
         
         if llm_patch is not None:
-            tmp_file_path = _create_patch_file(llm_patch)
+            tmp_file_path = _create_patch_file(llm_patch, conflicting_files)
             volumes[tmp_file_path] = {'bind': '/workspace/fix.patch', 'mode': 'rw'}
-            
-        # Check for manual overrides in evaluation/overrides/<CVE>/
-        # Expected structure: evaluation/overrides/CVE-XXXX-XXXX/test.patch
-        override_dir = os.path.join(os.path.dirname(__file__), "overrides", cve)
-        if os.path.exists(override_dir):
-            self.logger.info(f"Found override directory: {override_dir}")
-            for filename in os.listdir(override_dir):
-                file_path = os.path.join(override_dir, filename)
-                if os.path.isfile(file_path):
-                    self.logger.info(f"Mounting override: {filename}")
-                    volumes[file_path] = {'bind': f'/workspace/{filename}', 'mode': 'rw'}
                                 
         try:
             self.client.containers.run(
