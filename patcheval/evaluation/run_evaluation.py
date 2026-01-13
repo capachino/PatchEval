@@ -59,6 +59,22 @@ class DockerManager:
         if llm_patch is not None:
             tmp_file_path = _create_patch_file(llm_patch)
             volumes[tmp_file_path] = {'bind': '/workspace/fix.patch', 'mode': 'rw'}
+            
+        # Check for manual overrides in evaluation/overrides/<CVE>/
+        # Expected structure: evaluation/overrides/CVE-XXXX-XXXX/fix-run.sh
+        override_dir = os.path.join(os.path.dirname(__file__), "overrides", cve)
+        if os.path.exists(override_dir):
+            self.logger.info(f"Found override directory: {override_dir}")
+            for filename in os.listdir(override_dir):
+                file_path = os.path.join(override_dir, filename)
+                if os.path.isfile(file_path):
+                    # We explicitly do not allow overriding fix.patch via the directory
+                    if filename == "fix.patch":
+                        continue
+                    
+                    self.logger.info(f"Mounting override: {filename}")
+                    volumes[file_path] = {'bind': f'/workspace/{filename}', 'mode': 'rw'}
+                                
         try:
             self.client.containers.run(
                 image_name,
