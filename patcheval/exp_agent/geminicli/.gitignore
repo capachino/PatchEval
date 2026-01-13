@@ -18,3 +18,4 @@ logs/
 claude-code-proxy/uv.lock
 evaluation/process_data/*
 evaluation/results/*
+evaluation_output/
