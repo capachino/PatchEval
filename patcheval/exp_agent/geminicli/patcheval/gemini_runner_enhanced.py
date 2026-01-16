@@ -169,9 +169,18 @@ class GeminiRunnerEnhanced:
             settings_file = f"{self.work_dir}/.gemini/settings.json"
             self._write_file_to_container(settings_file, settings_content)
             
+            problem_instruction = "Please fix the vulnerabilities in the code repository based on the following information:"
+            problem_statement = record.problem_statement.replace(problem_instruction, "").strip()
+            
             self._write_file_to_container(
                 "/workspace/problem_statement.md",
-                record.problem_statement
+                problem_statement
+            )
+            
+            formatted_arg = problem_statement.replace('\\', '\\\\').replace('"', '\\"')
+            self._write_file_to_container(
+                "/workspace/problem_statement.formatted",
+                formatted_arg
             )
             
             self._exec_in_container("chown", f"-R gemini_user:gemini_user {self.work_dir}")
@@ -282,7 +291,7 @@ class GeminiRunnerEnhanced:
         else:
             # TODO: consider heredoc style for better readability and to prevent character limit issues.
             cmd_parts = [
-                f"gemini --prompt \"/{command_name} $(< ../problem_statement.md)\"",
+                f'gemini --prompt "/{command_name} \\"$(< ../problem_statement.formatted)\\""',
             ]
 
         cmd_parts.append("--yolo")
