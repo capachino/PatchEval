@@ -78,9 +78,14 @@ def main() -> None:
         logger.error("Workspace destination does not exist for CVE ID: %s at %s", args.cve, workspace_dir)
         sys.exit(1)
 
+    problem_instruction = "Please fix the vulnerabilities in the code repository based on the following information:"    
+    problem_statement = problem_statement.replace(problem_instruction, "").strip()
+    formatted_arg = problem_statement.replace('\n', '\\n').replace('\\', '\\\\').replace('"', '\\"')
+
     problem_statement_path = workspace_dir / "problem_statement.md"
+
     with problem_statement_path.open("w") as f:
-        f.write(problem_statement)
+        f.write(formatted_arg)
     logger.info("Wrote problem_statement.md for CVE: %s", args.cve)
 
     if args.patch_batch_id:

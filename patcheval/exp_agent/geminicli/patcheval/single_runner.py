@@ -124,7 +124,7 @@ def run_single_cve(record: CVERecord,
                 try:
                     import subprocess
                     git_diff = subprocess.run(
-                        f"docker exec {container_id} bash -c 'cd {record.work_dir} && git diff'",
+                        f"docker exec {container_id} bash -c 'cd {record.work_dir} && git add -A && git diff HEAD'",
                         shell=True, capture_output=True, text=True
                     ).stdout
                     if git_diff.strip():

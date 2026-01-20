@@ -177,7 +177,7 @@ class GeminiRunnerEnhanced:
                 problem_statement
             )
             
-            formatted_arg = problem_statement.replace('\\', '\\\\').replace('"', '\\"')
+            formatted_arg = problem_statement.replace('\n', '\\n').replace('\\', '\\\\').replace('"', '\\"')
             self._write_file_to_container(
                 "/workspace/problem_statement.formatted",
                 formatted_arg
@@ -291,7 +291,7 @@ class GeminiRunnerEnhanced:
         else:
             # TODO: consider heredoc style for better readability and to prevent character limit issues.
             cmd_parts = [
-                f'gemini --prompt "/{command_name} \\"$(< ../problem_statement.formatted)\\""',
+                f'gemini --prompt "/{command_name} --problemStatement=\\"$(< ../problem_statement.formatted)\\""',
             ]
 
         cmd_parts.append("--yolo")
@@ -614,7 +614,7 @@ class GeminiRunnerEnhanced:
             if self.allow_git_diff_fallback:
                 try:
                     git_patch = self._exec_in_container(
-                        "bash", f"-c 'cd {self.work_dir} && git diff HEAD'")
+                        "bash", f"-c 'cd {self.work_dir} && git add -A && git diff HEAD'")
                     if git_patch.strip():
                         
                         try:
