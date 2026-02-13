@@ -103,7 +103,7 @@ class DockerManager:
             # Targeted filtering based ONLY on identified conflicts in test.patch
             if conflicts:
                 try:
-                    cmd = ["filterdiff"]
+                    cmd = ["filterdiff", "--clean"]
                     for c in conflicts:
                         cmd.extend(["-x", f"*/{c}"])
                     
