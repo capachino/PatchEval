@@ -61,8 +61,7 @@ class ScriptGenerator:
         if not enable_web_search:
             settings["excludeTools"] = ["google_web_search"]
         
-        if model == '3pro' or model == '3flash':
-            settings["general"] = {"previewFeatures": True}
+        settings["general"] = {"previewFeatures": True}
         
         import json
         return json.dumps(settings, indent=2, ensure_ascii=False)

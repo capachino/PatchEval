@@ -291,7 +291,7 @@ class GeminiRunnerEnhanced:
         else:
             # TODO: consider heredoc style for better readability and to prevent character limit issues.
             cmd_parts = [
-                f'gemini --prompt "/{command_name} --problemStatement=\\"$(< ../problem_statement.formatted)\\""',
+                f'gemini --prompt "/{command_name} --vulnerabilityContext=\\"$(< ../problem_statement.formatted)\\""',
             ]
 
         cmd_parts.append("--yolo")
@@ -303,11 +303,6 @@ class GeminiRunnerEnhanced:
             ])
         else:
             cmd_parts.append("--output-format json")  
-            
-        if model == '3pro':
-            cmd_parts.append("--model gemini-3-pro-preview")
-        elif model == '3flash':
-            cmd_parts.append("--model gemini-3-flash-preview")
 
         command = " ".join(cmd_parts)
         self._log_process_step("command_build", f"build command: {command}")
