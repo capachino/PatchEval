@@ -7,10 +7,11 @@
 - CVE-2024-21542 Official PoC tests against `SafeExtractor` implementation detail
 - CVE-2024-24579 Official PoC references `tarVisitor` implementation detail
 
-# Error handling mismatch (not sure if these should be overridden)
+# Error handling mismatch (not sure if these should be overridden, may need to reconsider)
 
-- CVE-2017-16083 Official PoC prevents any ../ segments (may need to reconsider)
-- CVE-2017-16198 Official PoC prevents any ../ segments (may need to reconsider)
-- CVE-2018-16482 Official patch "mangles the path" (may need to reconsider)
-- CVE-2020-10691 Error message mismatch (may need to reconsider)
-- CVE-2020-7687. Official PoC prevents any ../ segments (may need to reconsider)
+- CVE-2017-16083 Official PoC prevents any ../ segments
+- CVE-2017-16198 Official PoC prevents any ../ segments
+- CVE-2018-16482 Official patch "mangles the path"
+- CVE-2020-10691 Error message mismatch
+- CVE-2020-7687  Official PoC prevents any ../ segments
+- CVE-2024-54132 Error message mismatch. Note it's still brittle as it performs a "contains" check for "path traversal"
