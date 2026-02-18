@@ -16,3 +16,5 @@
 - CVE-2020-7687  Official PoC prevents any ../ segments
 - CVE-2024-54132 Error message mismatch. Note it's still brittle as it performs a "contains" check for "path traversal"
 - CVE-2024-45388 Error message mismatch
+- CVE-2021-3281  Error message mismatch
+- CVE-2018-3734  Official PoC prevents any ../ segments
