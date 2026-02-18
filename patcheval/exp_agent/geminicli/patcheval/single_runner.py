@@ -50,7 +50,8 @@ def run_single_cve(record: CVERecord,
                   model: str = "25pro",
                   gemini_extension_path: Optional[str] = None,
                   command_name: str = "default",
-                  enable_web_search: bool = False
+                  enable_web_search: bool = False,
+                  api_key: Optional[str] = None
                   ) -> Dict[str, Any]:
     
     if semaphore is None:
@@ -78,9 +79,11 @@ def run_single_cve(record: CVERecord,
 
         
         result["stage"] = "api_check"
-        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise RuntimeError("Missing GEMINI_API_KEY environment variable")
+            api_key = os.getenv("GEMINI_API_KEY")
+        
+        if not api_key:
+            raise RuntimeError("Missing Gemini API key (no api_key provided and GEMINI_API_KEY not set)")
         
         result["stage"] = "docker_setup"
         pull_image_with_retry(record.image_name, semaphore)

@@ -15,9 +15,10 @@ import logging
 import time
 import json
 import threading
+import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, List
 
 from .dataset import load_dataset
 from .single_runner import run_single_cve
@@ -84,7 +85,8 @@ def run_batch_cves(dataset_path: Path,
                   model: str = "25pro",
                   gemini_extension_path: Optional[str] = None,
                   command_name: str = "default",
-                  enable_web_search: bool = False
+                  enable_web_search: bool = False,
+                  api_keys: Optional[List[str]] = None
                   ) -> Dict[str, Any]:
     
     start_time = time.time()
@@ -114,10 +116,14 @@ def run_batch_cves(dataset_path: Path,
     
     semaphore = threading.Semaphore(max_workers)
     
+    # Setup API key rotation if multiple keys are provided
+    key_cycle = itertools.cycle(api_keys) if api_keys else None
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_record = {
-            executor.submit(
+        future_to_record = {}
+        for record in records:
+            current_api_key = next(key_cycle) if key_cycle else None
+            future = executor.submit(
                 run_single_cve,
                 record=record,
                 outputs_root=outputs_root,
@@ -129,9 +135,10 @@ def run_batch_cves(dataset_path: Path,
                 model=model,
                 gemini_extension_path=gemini_extension_path,
                 command_name=command_name,
-                enable_web_search=enable_web_search
-            ): record for record in records
-        }
+                enable_web_search=enable_web_search,
+                api_key=current_api_key
+            )
+            future_to_record[future] = record
         
         for future in as_completed(future_to_record):
             record = future_to_record[future]

@@ -67,6 +67,8 @@ def parse_args() -> argparse.Namespace:
                               help="The name of the command to run (don't include the slash).")
     batch_parser.add_argument("--enable-web-search", action="store_true", default=False,
                               help="Enable web search for the agent.")
+    batch_parser.add_argument("--api-keys", type=str, nargs="+",
+                              help="Multiple Gemini API keys for rotation during batch processing.")
     
     # Single command  
     single_parser = subparsers.add_parser("single")
@@ -88,6 +90,8 @@ def parse_args() -> argparse.Namespace:
                                help="The name of the command to run (don't include the slash).")
     single_parser.add_argument("--enable-web-search", action="store_true", default=False,
                                help="Enable web search for the agent.")
+    single_parser.add_argument("--api-key", type=str,
+                               help="Gemini API key for processing.")
     
     # Cleanup command
     cleanup_parser = subparsers.add_parser("cleanup")
@@ -130,11 +134,13 @@ def handle_batch_command(args):
     timeout_seconds = parse_timeout(args.timeout)
     
     # Check API credentials  
-    try:
-        api_key = get_api_key_and_validate()
-    except RuntimeError as e:
-        logging.error(str(e))
-        return 1
+    api_keys = getattr(args, 'api_keys', None)
+    if not api_keys:
+        try:
+            api_keys = [get_api_key_and_validate()]
+        except RuntimeError as e:
+            logging.error(str(e))
+            return 1
     
     try:
         summary = run_batch_cves(
@@ -151,7 +157,8 @@ def handle_batch_command(args):
             model=args.model,
             gemini_extension_path=getattr(args, 'gemini_extension_path', None),
             command_name=args.command_name,
-            enable_web_search=args.enable_web_search
+            enable_web_search=args.enable_web_search,
+            api_keys=api_keys
         )
         
         print(f"\\n🎉 Batch processing completed!")
@@ -171,11 +178,13 @@ def handle_batch_command(args):
 def handle_single_command(args):
     """Handle single CVE processing command."""
     # Check API credentials
-    try:
-        api_key = get_api_key_and_validate()
-    except RuntimeError as e:
-        logging.error(str(e))
-        return 1
+    api_key = getattr(args, 'api_key', None)
+    if not api_key:
+        try:
+            api_key = get_api_key_and_validate()
+        except RuntimeError as e:
+            logging.error(str(e))
+            return 1
     
     # Load specific CVE record
     records = load_dataset(args.dataset)
@@ -200,7 +209,8 @@ def handle_single_command(args):
             model=args.model,
             gemini_extension_path=getattr(args, 'gemini_extension_path', None),
             command_name=args.command_name,
-            enable_web_search=args.enable_web_search
+            enable_web_search=args.enable_web_search,
+            api_key=api_key
         )
         
         if result["is_success"]:
