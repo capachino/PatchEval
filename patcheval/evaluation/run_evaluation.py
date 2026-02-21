@@ -419,6 +419,8 @@ def main():
                 patch = future_to_patch[future]
                 main_logger.error(f"Task for CVE {patch['cve']} failed unexpectedly: {e}", exc_info=True, extra={'cve': 'EXECUTOR'})
 
+    all_results.sort(key=lambda x: x.get("cve", ""))
+
     strict_summary = defaultdict(list)
     poc_summary = defaultdict(list)
     fail_summary = defaultdict(list)
